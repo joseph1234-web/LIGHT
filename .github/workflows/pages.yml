@@ -24,6 +24,7 @@ jobs:
           cache: npm
       - run: npm run install:ci
       - run: npx tsc --noEmit
+      - run: node tests/session-integration.mjs
       - run: npm run check:postgres
       - run: npm run build:pages
       - uses: actions/configure-pages@v5

@@ -3,7 +3,7 @@ export type Session={access_token:string;refresh_token:string;expires_at:number;
 export class AccountSession {
  readonly storageKey:string;
  private refreshing:Promise<Session|null>|null=null;
- constructor(readonly config:StandaloneConfig,readonly storage:Storage=localStorage,readonly request:typeof fetch=fetch){this.storageKey='ekklo:session:'+new URL(config.supabaseUrl).hostname;}
+ constructor(readonly config:StandaloneConfig,readonly storage:Storage=localStorage,readonly request:typeof fetch=globalThis.fetch.bind(globalThis)){this.storageKey='ekklo:session:'+new URL(config.supabaseUrl).hostname;}
  read():Session|null{try{const s=JSON.parse(this.storage.getItem(this.storageKey)||'null');return s&&typeof s.access_token==='string'&&typeof s.refresh_token==='string'&&Number.isFinite(s.expires_at)?s:null;}catch{return null;}}
  save(data:any):Session|null{
   if(typeof data?.access_token!=='string'||typeof data?.refresh_token!=='string')return null;
