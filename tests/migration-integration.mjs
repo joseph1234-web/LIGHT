@@ -22,7 +22,7 @@ async function unsafe(query,args=[]){
  for(const match of query.matchAll(/\$(\d+)::jsonb\b/g))bound[Number(match[1])-1]=postgresTypes.json.serialize(args[Number(match[1])-1]);
  const result=await pg.query(query,bound);return Object.assign(result.rows,{count:result.affectedRows});
 }
-const connection={unsafe,async begin(callback){await pg.exec('BEGIN');try{const result=await callback(connection);await pg.exec('COMMIT');return result;}catch(e){await pg.exec('ROLLBACK');throw e;}}};
+const connection={unsafe,async end(){},async begin(callback){await pg.exec('BEGIN');try{const result=await callback(connection);await pg.exec('COMMIT');return result;}catch(e){await pg.exec('ROLLBACK');throw e;}}};
 globalThis.__ekkloMigrationDatabase=connection;
 const variables={SUPABASE_DB_URL:'postgres://test',SUPABASE_URL:'https://supabase.test',SUPABASE_SECRET_KEYS:JSON.stringify({default:'sb_secret_fixture'})};
 globalThis.Deno={env:{get:key=>variables[key]},serve(){}};

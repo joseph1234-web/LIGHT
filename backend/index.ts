@@ -1,6 +1,6 @@
 import {GET,POST} from '../app/api/[...path]/route';
 import {withEnvironment} from './environment';
-import {database,context,state,verifiedUser,accountOwner,secretMatches} from './runtime';
+import {database,context,state,verifiedUser,accountOwner,secretMatches,withDatabase} from './runtime';
 import {migrationStep} from './migrate';
 import {runChurchBackground} from '../lib/church/automation-worker';
 import {runQueue} from '../lib/publisher';
@@ -10,6 +10,9 @@ const prefix='/functions/v1/ekklo-api';
 function output(data:any,status=200){return Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
 function cleanHeaders(headers:Headers){const result=new Headers(headers);for(const key of [...result.keys()])if(key.toLowerCase().startsWith('oai-')||['cookie','host','authorization','apikey'].includes(key.toLowerCase()))result.delete(key);return result;}
 export async function handler(request:Request):Promise<Response>{
+ return withDatabase(()=>dispatch(request));
+}
+async function dispatch(request:Request):Promise<Response>{
  let response:Response;let settings:any;
  const url=new URL(request.url);
  const mount=[prefix,'/ekklo-api'].find(value=>url.pathname===value||url.pathname.startsWith(value+'/'));

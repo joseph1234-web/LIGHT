@@ -1,11 +1,17 @@
 import postgres from 'postgres';
+import {AsyncLocalStorage} from 'node:async_hooks';
 import {createD1Adapter} from './postgres-d1.mjs';
 import {PrivateStorage} from './storage';
-let connection:ReturnType<typeof postgres>|undefined;
+const requests=new AsyncLocalStorage<{connection?:ReturnType<typeof postgres>}>();
+export async function withDatabase<T>(run:()=>Promise<T>):Promise<T>{
+ const request:{connection?:ReturnType<typeof postgres>}={};
+ return requests.run(request,async()=>{try{return await run();}finally{await request.connection?.end({timeout:5});}});
+}
 export function database(){
- if(connection)return connection;
+ const request=requests.getStore();if(!request)throw new Error('Database access requires an active request.');
+ if(request.connection)return request.connection;
  const url=Deno.env.get('SUPABASE_DB_URL');if(!url)throw new Error('The backend database connection is not configured.');
- return connection=postgres(url,{prepare:false,max:2,idle_timeout:20,connect_timeout:15,types:{bigint:{to:20,from:[20],serialize:(value:any)=>String(value),parse:(value:string)=>Number(value)}}});
+ return request.connection=postgres(url,{prepare:false,max:1,idle_timeout:5,connect_timeout:15,types:{bigint:{to:20,from:[20],serialize:(value:any)=>String(value),parse:(value:string)=>Number(value)}}});
 }
 export function adminHeaders(){
  let keys:Record<string,string>={};try{keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}');}catch{}
