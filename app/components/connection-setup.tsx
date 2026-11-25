@@ -1,0 +1,37 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {ArrowRight,ExternalLink,KeyRound,Loader2,ShieldCheck,X} from 'lucide-react';
+import MetaSetupHelp from './meta-setup-help';
+
+type Provider='facebook'|'instagram'|'youtube';
+const names={facebook:'Facebook',instagram:'Instagram',youtube:'YouTube'};
+type Props={target:Provider;initialProvider:Provider;onClose:()=>void;onSaved:()=>Promise<any>};
+export default function ConnectionSetup({target,initialProvider,onClose,onSaved}:Props){
+ const [provider,setProvider]=useState<Provider>(initialProvider),[data,setData]=useState<any>(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false);
+ const [appId,setAppId]=useState(''),[secret,setSecret]=useState(''),[version,setVersion]=useState(''),[configId,setConfigId]=useState('');
+ useEffect(()=>{const controller=new AbortController();fetch('/api/connections/setup',{signal:controller.signal,cache:'no-store'}).then(async r=>{const d:any=await r.json();if(!r.ok)throw new Error(d.error||'Could not load private app settings.');setData(d);}).catch(e=>{if(e.name!=='AbortError')setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});return()=>controller.abort();},[]);
+ useEffect(()=>{const app=data?.apps?.[provider];setAppId(app?.appId||'');setVersion(app?.version||'');setConfigId(app?.configId||'');setSecret('');},[provider,data]);
+ const callback=(typeof window!=='undefined'?window.location.origin:'')+'/api/oauth/'+provider+'/callback';
+ const authorize='/api/oauth/'+provider+'/start'+(target==='instagram'&&provider==='facebook'?'?target=instagram':'');
+ async function save(e:React.FormEvent){e.preventDefault();setSaving(true);setError('');try{const r=await fetch('/api/connections/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider,appId,appSecret:secret,...(provider==='youtube'?{}:{version}),...(provider==='facebook'?{configId}:{})})});const d:any=await r.json();if(!r.ok)throw new Error(d.error||'Could not save app settings.');setData(d);setSecret('');await onSaved();setSaved(true);}catch(e){setError((e as Error).message)}finally{setSaving(false)}}
+ return <div className="modal-overlay" onClick={()=>{if(!saving)onClose()}}><section className="modal connection-setup-modal" role="dialog" aria-modal="true" aria-labelledby="connection-setup-title" onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==='Escape'&&!saving)onClose()}}>
+ <button className="modal-close icon-btn" aria-label="Close connection setup" autoFocus onClick={onClose} disabled={saving}><X size={21}/></button>
+ <span className="modal-illustration"><KeyRound size={25}/></span><div className="eyebrow">APP SETUP → ACCOUNT PERMISSION</div><h2 id="connection-setup-title">Connect {names[target]}</h2>
+ <p>ekklo. needs a developer app before it can request publishing permission. Save its client keys here, then continue to the official sign-in screen.</p>
+ {target==='instagram'&&<div className="connection-methods" aria-label="Instagram connection method"><button className={'btn secondary '+(provider==='facebook'?'selected':'')} disabled={saving} onClick={()=>{setProvider('facebook');if(data)setError('');setSaved(false)}}>Through Facebook Page</button><button className={'btn secondary '+(provider==='instagram'?'selected':'')} disabled={saving} onClick={()=>{setProvider('instagram');if(data)setError('');setSaved(false)}}>Direct Instagram</button></div>}
+ {target==='instagram'&&<p className="connection-help">{provider==='facebook'?'Use your Meta Facebook app. Your professional Instagram account must be linked to the Page you select.':'Use the Instagram App ID and secret from your Meta app’s Instagram API setup. A professional Instagram account is required.'}</p>}
+ <ol className="connection-instructions"><li><a className="text-link" href={provider==='youtube'?'https://console.cloud.google.com/apis/credentials':'https://developers.facebook.com/apps/'} target="_blank" rel="noopener noreferrer">{provider==='youtube'?'Open Google Cloud Console':'Open Meta for Developers'} <ExternalLink size={13}/></a><p>{provider==='youtube'?'Enable YouTube Data API v3 and create an OAuth client of type Web application. Configure its consent screen and test users or production access.':'Configure an app for the publishing features you need. Grant your account a testing role while the app is in development; public access requires the relevant Meta approvals.'}</p></li><li>Add this exact redirect URL to your developer app:<code className="callback-code">{callback}</code></li><li>Enter the developer app’s keys below. These are different from your social account password.</li></ol>
+ {provider!=='youtube'&&<MetaSetupHelp target={target} direct={provider==='instagram'} expanded/>}
+ {loading?<p className="connection-loading"><Loader2 size={16} className="spin"/>Loading private settings…</p>:<form onSubmit={save} className="connection-setup-form">
+ <label>{provider==='youtube'?'Google Web OAuth client ID':provider==='instagram'?'Instagram App ID':'Meta App ID'}<input value={appId} onChange={e=>{setAppId(e.target.value);setSaved(false)}} required autoComplete="off" spellCheck={false} disabled={saving||!data} placeholder={provider==='youtube'?'…apps.googleusercontent.com':'Numeric App ID'}/></label>
+ <label>{provider==='youtube'?'Google OAuth client secret':provider==='instagram'?'Instagram App Secret':'Meta App Secret'}<input type="password" value={secret} onChange={e=>{setSecret(e.target.value);setSaved(false)}} autoComplete="new-password" spellCheck={false} required={!data?.apps?.[provider]?.hasSecret} disabled={saving||!data} placeholder={data?.apps?.[provider]?.hasSecret?'Saved — leave blank to keep it':'Paste the developer app secret'}/></label>
+ {provider!=='youtube'&&<label>Graph API version<input value={version} onChange={e=>{setVersion(e.target.value);setSaved(false)}} required autoComplete="off" spellCheck={false} disabled={saving||!data} placeholder="Use the supported version shown in your Meta app"/></label>}
+ {provider==='facebook'&&<label>Facebook Login for Business Configuration ID <small>(use this when Meta provides a login configuration)</small><input value={configId} onChange={e=>{setConfigId(e.target.value);setSaved(false)}} autoComplete="off" spellCheck={false} disabled={saving||!data} placeholder="Paste the configuration ID from the same Meta app"/></label>}
+ <p className="connection-secret-note"><ShieldCheck size={15}/>Client secrets are encrypted on the server and are never displayed again. Changing app credentials pauses affected accounts until you reconnect.</p>
+ {error&&<p className="connection-form-error" role="alert">{error}</p>}
+ {saved?<div className="connection-saved" role="status"><p><ShieldCheck size={16}/>App settings saved. Your account still needs authorization.</p><a className="btn primary full" href={authorize} target="_top">Continue to {provider==='youtube'?'Google':names[provider]} <ArrowRight size={16}/></a></div>:<button type="submit" className="btn primary full" disabled={saving||!data||!data.setup?.encryption}>{saving?<Loader2 size={15} className="spin"/>:<ShieldCheck size={15}/>}Save app settings</button>}
+ {!data?.setup?.encryption&&data&&<p className="connection-form-error">Server encryption must be configured before app secrets can be saved.</p>}
+ </form>}
+ {loading&&error&&<p className="connection-form-error" role="alert">{error}</p>}
+ </section></div>
+}

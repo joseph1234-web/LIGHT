@@ -1,0 +1,37 @@
+# ekklo. background publishing
+
+The connected church account uses its existing linked hourly cloud task. The operator invokes `church_background_run` for the exact enrolled email. Keep that scope; do not fall back to the operator account when a connection is missing. In the dashboard, a cloud check is healthy for 90 minutes after its last verified receipt. Page refreshes and manual image checks never refresh that receipt.
+
+The task runs without an open website. It prepares the next seven days when automatic queue filling is enabled, advances confirmed Canva jobs, and publishes ready images only under the account’s saved publishing and series switches. Images requested from Canva are never silently replaced. Preserve an intentionally paused publishing switch.
+
+Runtime health metadata (`CHURCH_SCHEDULER_ENABLED`, `CHURCH_SCHEDULER_ACCOUNT_EMAIL`) describes the actual linked task; setting these values alone does not create or enable a task. The cloud receipt detects a schedule that later stops checking. Tasks currently run at most hourly, so custom minute schedules are processed on the next eligible check, subject to the existing 75-minute window.
+
+An optional `CHURCH_PREPARATION_REQUEST` may contain an expiring, exact-account `resume_preparation` request with a unique `requestId`. It only resumes queue filling once; it does not enable publishing, revive cancellations, reset Canva rotation, or retry a delivery. Later pauses by the user take precedence. Remove an applied directive from runtime settings.
+
+## Retained delivery and Canva safeguards
+
+The Site exposes a signed-in `run_publishing_queue` MCP tool. A browser polling loop is not a background scheduler.
+
+After the social applications are configured and the user authorizes their accounts, use the Site's installed private plugin to call `studio_status` and `run_publishing_queue`. Confirm a new event/last-run time and persisted queue state. Only English video content with a recorded country outside the Philippines and provenance evidence is eligible. Foreign channel metadata is a creator declaration, not proof of where a particular video was filmed. The runner never discovers/reuses videos on its own: Autopilot selects only previously uploaded and explicitly approved drafts with music and video rights declarations. Captions remain editable before approval. The exact approved draft is snapshotted per delivery.
+
+Reuse the Site’s existing linked hourly automation in Asia/Manila; do not create duplicates. Posting times are whole-hour slots. The owner can independently enable approved pictures and videos in Autopilot, and the church planner has separate automation buttons. Each slot selects at most one approved picture and one approved video. Pictures use Facebook or Instagram; YouTube accepts videos only. The existing private runner prepares church content even while publishing is intentionally paused. Keep routine successful or unchanged missing-setup checks quiet.
+
+A call from the Site's signed-in private plugin marks the runner verification time; the UI requires it before enabling Autopilot. Account tokens are encrypted in D1 using the runtime encryption key. Missing/expired tokens produce review states; never fabricate success. Jobs claim atomically before posting. If an upload response is interrupted, do not retry automatically: inspect the actual platform account first. Meta publish container/video IDs are retained for reconciliation. A video is shown published only after a platform success response (TikTok manual reports use a separate status).
+
+Without a connected cloud runner, manual queue checks work only while invoked, and scheduled jobs wait. The UI must show that limitation. No scheduling automation is created by source code alone.
+
+## Church image posts
+
+The same verified `run_publishing_queue` tool prepares original Facebook image posts and optionally submits them to the authorized Page. Church settings and templates have their own persistent records. Included scripture is from the public-domain World English Bible Classic; exact references and source chapter URLs accompany generated records.
+
+Defaults: verse of the day at 07:00 Asia/Manila; Saturday invitations at 18:00 after the owner enters their church name and location; Christmas countdown at 09:00 from December 1 through December 25. User controls allow other whole-hour slots, a longer Christmas countdown, and dated custom events. Automatic church publishing remains off until the owner connects the intended Page and explicitly enables it. The hourly cloud task may prepare image drafts while publishing is off.
+
+The owner's three saved Canva links are template sources for daily Bible verses, Saturday invitations for the following Sunday, and Christmas countdowns. The connected Canva app must inspect and fill each source's editable text fields, create a separate output design, export a single-page PNG, and verify its contents. Do not overwrite the source template. Retrieve `church_canva_jobs`, claim each current post/render with `church_canva_render`, and checkpoint confirmed Canva design/export job IDs immediately. Complete the image with the saved source URL, claim, verified design ID, and Canva PNG export URL. The Site accepts exports only from HTTPS Canva hosts, enforces owner/revision/deadline checks, and never publishes a built-in substitute for a chosen Canva template.
+
+Resume confirmed Canva jobs by their IDs; if a create/export outcome is unknown, leave the render claimed for review and do not create another. An attached image does not itself publish. After preparing images, run the publishing queue; it enforces the saved Facebook Page, enabled series, and time window. Missing Canva access or unchanged missing account setup should stay quiet.
+
+A unique owner/series/event/date constraint prevents duplicate daily images. Posting claims are atomic and use the selected Page ID. A timeout or ambiguous upload is never retried automatically. The publishing window is 75 minutes; old missed posts are skipped, not backfilled. Countdown generation stops after the event; Saturday invitations target the next Sunday. Changes to settings mark unfinished future posts outdated so they can be regenerated from the saved details; individual cancellations stay cancelled.
+
+Linked task prompt: “Run this Site's ekklo. publishing queue through its connected private plugin. Prepare daily verse images, Saturday invitations for the next Sunday, and enabled Christmas/special-event countdowns. Publish church image posts only when the owner's church publishing switch is enabled and the authorized Facebook Page matches the saved selection. Keep video approval and copyright rules intact. Do not retry ambiguous uploads or catch up expired posts. Keep successful routine checks quiet; report actionable failures.” Cadence: hourly at minute 00, Asia/Manila. Always use `get_site` to reuse the existing linked task.
+
+Disconnect and account-switch operations pause affected jobs and media automation; changing Facebook also disables automatic church publishing. Ambiguous uploads move to review and are not regenerated by subsequent planner changes. New deliveries store the exact connected account ID and cannot be sent to a different destination after a switch. Disabling a media type cancels its unstarted automatic jobs, preserving manual schedules and the other enabled type. Disabling media automation cancels both types of unstarted automatic jobs.

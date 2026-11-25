@@ -1,0 +1,335 @@
+{
+  "id": "provided-christmas-pack-v2",
+  "name": "Canva design 1 (1).zip + 3 corrected PNGs",
+  "assetRoot": "/christmas-countdown/v2",
+  "width": 1485,
+  "height": 1485,
+  "files": [
+    {
+      "file": "1.png",
+      "sha256": "9c5a98c3e8a92869f7d85250cc7d0f726dd9d3eba91d48093254b55b847996c7",
+      "bytes": 4019025
+    },
+    {
+      "file": "2.png",
+      "sha256": "46e3714cba410877bef30bda45cfc0343b651161ac1b822ccc8963fe712fff0d",
+      "bytes": 4047001
+    },
+    {
+      "file": "3.png",
+      "sha256": "756ddc318a93a7e8b4a52e30e8aa80f290767e2886f14280e72a650fc4b4129c",
+      "bytes": 534153
+    },
+    {
+      "file": "4.png",
+      "sha256": "29efc00c8457882601bd603ff1a2a1bad46679ee46613000e2cfa7c9ca412d60",
+      "bytes": 1919121
+    },
+    {
+      "file": "5.png",
+      "sha256": "04866fa71752eb32cad5614dace19c06b4d0b8e5143a5f4b3ba342d0857ab1fb",
+      "bytes": 333819
+    },
+    {
+      "file": "6.png",
+      "sha256": "0a9005465495d807f123048a8c8139f5c6d8015086f585cdadde59c10e546929",
+      "bytes": 4451309
+    },
+    {
+      "file": "7.png",
+      "sha256": "2c5ba13bf92405e01adf5a8fe35ddf5703003e27d65b5c63d9babb0e70fa5417",
+      "bytes": 459569
+    },
+    {
+      "file": "8.png",
+      "sha256": "e9f2712d2e353f75b5e01ffa626141e72a597e232ceaaab5e59221f77ff55188",
+      "bytes": 796905
+    },
+    {
+      "file": "9.png",
+      "sha256": "92d003f1e046fc55f2be4912ffa703416600cccf09c5c0e169560a239d905ffc",
+      "bytes": 183590
+    },
+    {
+      "file": "10.png",
+      "sha256": "b671f21539b5b1a1294972c9d67644386df4d7db4e244539bbd4fdb21671312d",
+      "bytes": 4230698
+    },
+    {
+      "file": "11.png",
+      "sha256": "0e43baa542e181118e84b231a41c716bd7a7032275601c380e58335a14eb40a9",
+      "bytes": 1314313
+    },
+    {
+      "file": "12.png",
+      "sha256": "3e031b612e96f1936f3c2eecfb25cddb30a08d9ad9cf4073e2815000bf3b7ba0",
+      "bytes": 2516803
+    },
+    {
+      "file": "13.png",
+      "sha256": "13743ca1c4ce551861fa1119ac51ed61eca380a48fa365d5cab3adc98846a34b",
+      "bytes": 842369
+    },
+    {
+      "file": "14.png",
+      "sha256": "ee5418b93fccd7012ae0413d3f9bae2437343833af54d2bd22e8a323497d8cff",
+      "bytes": 272929
+    },
+    {
+      "file": "15.png",
+      "sha256": "703ce989576e3bc25da8bf90bb84b4f2abf941cb15e5cbe102d71f4af98af44a",
+      "bytes": 431174
+    },
+    {
+      "file": "16.png",
+      "sha256": "ae0cb93002941ba6c9703e401c320c7321f58a67bc74c61e20e407026cd9e7d2",
+      "bytes": 478501
+    },
+    {
+      "file": "17.png",
+      "sha256": "302ce9e67ba2f0fb4c5dbd5b7c09d3681b6b9b288d6f1af2db7e08abd593d46a",
+      "bytes": 1991702
+    },
+    {
+      "file": "18.png",
+      "sha256": "19378941043f7e60bbbeac84b5a428c3bc1b37bcaece1687a5d093a39de33866",
+      "bytes": 3448564
+    },
+    {
+      "file": "19.png",
+      "sha256": "5f0a751f4cdcceca7397b8edc4fc11a4b1648751008449dddaf5088f632305e9",
+      "bytes": 2638318
+    },
+    {
+      "file": "20.png",
+      "sha256": "e2af44bd7260d9431bb91e8273d9932dbb229ad95cf13013a1f54e157b1be9b9",
+      "bytes": 799502
+    },
+    {
+      "file": "21.png",
+      "sha256": "c53847f606cbed880dbb6fd415cd6317931c518210c613106067aa14269f3a70",
+      "bytes": 164803
+    },
+    {
+      "file": "22.png",
+      "sha256": "2ebfdb18a2bd72074f15b868c3361944aba87c0e53427a3c04d1e80ea0131f2d",
+      "bytes": 172853
+    },
+    {
+      "file": "23.png",
+      "sha256": "72c6c3ce298c90cb8f9da85883710becedc7c05ca601d3f68e0b6ce3fff4ddf0",
+      "bytes": 2195157
+    },
+    {
+      "file": "24.png",
+      "sha256": "c974e51d6f63a91363adeb81bf89e65e18f4f95b2f8f93cf28683959dbff77db",
+      "bytes": 1905622
+    },
+    {
+      "file": "25.png",
+      "sha256": "f422cba82e6c28d3f57291208fe4ad322aa51ed9817bc6eb4cb06262de7b4f71",
+      "bytes": 2320340,
+      "originalUpload": "Canva design 1 (1).png"
+    },
+    {
+      "file": "26.png",
+      "sha256": "8e0ed89f6d735047dfb44f61d26e20d9a705954db6f3b86962168840c29b4238",
+      "bytes": 4004053
+    },
+    {
+      "file": "27.png",
+      "sha256": "0af5061fd601ab7dcd640e0298e750f9852a1cefa59615b0aefbffaa1994a6d6",
+      "bytes": 3862514
+    },
+    {
+      "file": "28.png",
+      "sha256": "af31d860e4c1d99891e3aaab7d84ed12dce2b7d980ca3e921f25c770f5f5d05e",
+      "bytes": 401629,
+      "originalUpload": "Canva design 1.png"
+    },
+    {
+      "file": "29.png",
+      "sha256": "ee51b5ccadea992ceae810590e93fa662f2e370c13c87bab0b70f2fe4b9e618c",
+      "bytes": 1907366
+    },
+    {
+      "file": "30.png",
+      "sha256": "6ea5a3e910e36a3ce2bde47bcbfc14f248a42cb7a868d2870aaec17c6d872c2d",
+      "bytes": 312231
+    },
+    {
+      "file": "31.png",
+      "sha256": "ce3f92d3115422ed04bd4cea4c01d27f37dc7a91c0162de3e857b5d01253125d",
+      "bytes": 214684
+    },
+    {
+      "file": "32.png",
+      "sha256": "2d2b9dc2ef44dc97846846cc7de7a3cb58484096b8e59c040bf65d261574f622",
+      "bytes": 172043
+    },
+    {
+      "file": "33.png",
+      "sha256": "348221156b11a757637cd1242a22405ddcd2e70696e4d3f93c8aa69ea7b863b4",
+      "bytes": 196523
+    },
+    {
+      "file": "34.png",
+      "sha256": "323528aadef5ad2e47aa4495e7362b4ce3e614ad206c62d98e7bb5d395c3abda",
+      "bytes": 407418
+    },
+    {
+      "file": "35.png",
+      "sha256": "38b8ba1575692b33e874384550a253e80e7748e406894f37eacbcb2cbc0ed671",
+      "bytes": 4231083
+    },
+    {
+      "file": "36.png",
+      "sha256": "4060dc47bd325d2b0188bd8e320112730de74edb772491923c3c1b6356b2ba0b",
+      "bytes": 151938
+    },
+    {
+      "file": "37.png",
+      "sha256": "1533a5ba004d29dbd6bb45cb4e812f18f40bf2f2632af7eac9a9bf85c8db4286",
+      "bytes": 2710981
+    },
+    {
+      "file": "38.png",
+      "sha256": "2d4f090d2db6bf95ab938063780ecb702d7004131b83dcf6b57508a4ea31de00",
+      "bytes": 1671716
+    },
+    {
+      "file": "39.png",
+      "sha256": "ef55b53712fd2790df2a04cbf12e6f4245eec0897add50226b93e67d2e238c71",
+      "bytes": 185253
+    },
+    {
+      "file": "40.png",
+      "sha256": "6f7ea20f0909f5855d9fbb06c6a19d1aa90a8490aa806c6d276aacf0bcef4023",
+      "bytes": 924837
+    },
+    {
+      "file": "41.png",
+      "sha256": "57b30446ceace84ddd0fa0d505a74ecdc94dacbec355c976bfca324112a06a84",
+      "bytes": 171072
+    },
+    {
+      "file": "42.png",
+      "sha256": "80d1d6ea28457845886fc652694da59c4348045ad77da613845d6ec58019897a",
+      "bytes": 4264012
+    },
+    {
+      "file": "43.png",
+      "sha256": "0f7966a8724134a6d48a4ef254dfb2b01f9ee85c2e7fd37cd0dacdccead41d97",
+      "bytes": 1561077
+    },
+    {
+      "file": "44.png",
+      "sha256": "831f34fb2506128ee8dc80870e6aa37598e6f15b7a4cca8c497c60ef7acfef8a",
+      "bytes": 2937087
+    },
+    {
+      "file": "45.png",
+      "sha256": "743add8980ca324283ee7e1e6f8f2cb65a38b111349957cffa69df7d48bb86df",
+      "bytes": 793733
+    },
+    {
+      "file": "46.png",
+      "sha256": "3f8cdfb8f2003566d00ed2e2193fb0847bea0e90fc8c26e390c26a3f43b07903",
+      "bytes": 1164515
+    },
+    {
+      "file": "47.png",
+      "sha256": "3c2aed6a56028e1bc93dbc9bebc204c9f3789fdd3e81c89e8f3d0cbd8f268169",
+      "bytes": 3701248,
+      "originalUpload": "Canva design 1 (2).png"
+    },
+    {
+      "file": "48.png",
+      "sha256": "7dd31ae9da97c0751d03d8830a96191259836ec00ff7edeea01cfd9d8a03577f",
+      "bytes": 153007
+    },
+    {
+      "file": "49.png",
+      "sha256": "588cd296d2e67b391f8ff781410b9e9f35ef1edeb88427ed63dfa04b34b73024",
+      "bytes": 1569029
+    },
+    {
+      "file": "50.png",
+      "sha256": "c530dd505f7abcd2c9037824b13f450290a26611edf823f8040598d384c6ee4d",
+      "bytes": 158509
+    },
+    {
+      "file": "51.png",
+      "sha256": "92bdde63d925cda9c4a05affe88b05b729b82e708e9c3475701ce49d537ef754",
+      "bytes": 275750
+    },
+    {
+      "file": "52.png",
+      "sha256": "4df95c6871f9a0d4b06f08fbe09e50eaad6dde425725966e3e8348767cb40d30",
+      "bytes": 456332
+    }
+  ],
+  "days": {
+    "50": 1,
+    "49": 2,
+    "48": 3,
+    "47": 4,
+    "46": 5,
+    "45": 6,
+    "44": 7,
+    "43": 8,
+    "42": 9,
+    "41": 10,
+    "40": 11,
+    "39": 12,
+    "38": 13,
+    "37": 14,
+    "36": 15,
+    "35": 16,
+    "34": 17,
+    "33": 18,
+    "32": 19,
+    "31": 20,
+    "30": 21,
+    "29": 22,
+    "28": 23,
+    "27": 24,
+    "26": 25,
+    "25": 26,
+    "24": 27,
+    "23": 28,
+    "22": 29,
+    "21": 30,
+    "20": 31,
+    "19": 32,
+    "18": 33,
+    "17": 34,
+    "16": 35,
+    "15": 36,
+    "14": 37,
+    "13": 38,
+    "12": 39,
+    "11": 40,
+    "10": 41,
+    "9": 42,
+    "8": 43,
+    "7": 44,
+    "6": 45,
+    "5": 46,
+    "4": 47,
+    "3": 48,
+    "2": 49,
+    "1": 50,
+    "0": 51
+  },
+  "missingDays": [],
+  "heldDays": {},
+  "greetingFiles": [
+    51,
+    52
+  ],
+  "explicitYears": {
+    "23": 2026,
+    "26": 2026
+  }
+}
