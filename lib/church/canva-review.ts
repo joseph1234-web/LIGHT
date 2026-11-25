@@ -1,4 +1,4 @@
-import {E,one,rows,run,uid,now,HttpError} from '../server';
+import {E,one,rows,run,uid,now,HttpError,apiEndpoint} from '../server';
 import {churchConfig} from './server';
 import {canvaAccess,canvaApi} from './canva-automation';
 import {downloadCanvaPng} from './canva';
@@ -46,7 +46,7 @@ export async function reviewCanvaPost(owner:string,input:any,origin:string){
  if(meta.updated_at!==knownUpdated&&edit.observedRevision!==meta.updated_at){edit.observedRevision=meta.updated_at;edit.observedAt=stamp;}
  const editUrl=editLink(meta.urls?.edit_url,edit.correlationState);
  if(!await patch(owner,row,edit))throw new HttpError(409,'This post changed while its Canva link was opening. Refresh the current post.');
- return {editUrl,page:c.page,returnUrl:new URL('/api/canva/return',origin).toString(),reviewOptional:true};
+ return {editUrl,page:c.page,returnUrl:apiEndpoint(new Request(origin),'canva/return'),reviewOptional:true};
 }
 
 /** Retain late confirmed export IDs even if the post was removed in flight. */

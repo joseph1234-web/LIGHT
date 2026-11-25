@@ -3,14 +3,16 @@ import {churchPublishingItem} from './church/publishing-view';
 import {facebookPermissions,instagramFacebookPublishPermissions,instagramDirectPublishPermissions,hasPermissions} from './meta-permissions';
 import { defaultSettings, validateDraft, rightsIssues, platforms, type Draft, type Platform } from './model';
 export const E=()=>env as unknown as Record<string,any>;
-export const db=()=>{const d=E().DB as D1Database|undefined;if(!d)throw new Error('Storage is being prepared. Please try again shortly.');return d};
+export const db=()=>{const d=E().DB as D1Database|undefined;if(!d)throw new Error('Storage is being prepared. Please try again shortly.');if(E().MIGRATION_FREEZE==='1')return {prepare(query:string){if(!/^\s*SELECT\b/i.test(query))throw new HttpError(503,'This workspace is moving to its new address. Saved content is protected while the move finishes.');return d.prepare(query);},batch(){throw new HttpError(503,'This workspace is moving to its new address.');}} as unknown as D1Database;return d};
 export const now=()=>new Date().toISOString();
 export const uid=()=>crypto.randomUUID();
 export function user(request:Request){const id=request.headers.get('oai-authenticated-user-id');if(!id)throw new HttpError(401,'Sign in with ChatGPT to use your private studio.');return id;}
 export class HttpError extends Error{constructor(public status:number,message:string){super(message)}}
 export function json(data:unknown,status=200){return Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}})}
 export async function body(request:Request){if(Number(request.headers.get('content-length')||0)>150000)throw new HttpError(413,'This request is too large.');return request.json() as Promise<any>}
-export function csrf(request:Request){if(!['GET','HEAD','OPTIONS'].includes(request.method)){const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)throw new HttpError(403,'Open this action from your studio.');}}
+export function csrf(request:Request){if(!['GET','HEAD','OPTIONS'].includes(request.method)){const origin=request.headers.get('origin'),allowed=new Set([new URL(request.url).origin]);if(E().PUBLIC_APP_URL)allowed.add(new URL(E().PUBLIC_APP_URL).origin);if(origin&&!allowed.has(origin))throw new HttpError(403,'Open this action from your studio.');}}
+export function apiEndpoint(request:Request,path:string){return E().PUBLIC_API_BASE?E().PUBLIC_API_BASE.replace(/\/$/,'')+'/'+path.replace(/^\//,''):new URL('/api/'+path.replace(/^\//,''),request.url).toString();}
+export function appEndpoint(request:Request,path=''){return E().PUBLIC_APP_URL?E().PUBLIC_APP_URL.replace(/\/$/,'')+'/'+path.replace(/^\//,''):new URL('/'+path.replace(/^\//,''),request.url).toString();}
 export async function rows(sql:string,...args:any[]){return (await db().prepare(sql).bind(...args).all()).results as any[]}
 export async function one(sql:string,...args:any[]){return await db().prepare(sql).bind(...args).first() as any}
 export async function run(sql:string,...args:any[]){return db().prepare(sql).bind(...args).run()}
@@ -92,12 +94,12 @@ export async function pausePlatform(owner:string,platform:string,message:string)
 export async function storeConnection(owner:string,platform:string,accountId:string,label:string,secret:any){const old=await one('SELECT account_id FROM connections WHERE owner=? AND platform=?',owner,platform);if(old&&old.account_id!==accountId)await pausePlatform(owner,platform,'Account changed. Review the original delivery and choose its intended account before rescheduling.');await run('INSERT INTO connections (id,owner,platform,account_id,label,secret,expires,created) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(owner,platform) DO UPDATE SET account_id=excluded.account_id,label=excluded.label,secret=excluded.secret,expires=excluded.expires',uid(),owner,platform,accountId,label,await seal(secret),secret.expiresAt||null,now());}
 export async function disconnectConnection(owner:string,platform:string){if(!['facebook','instagram','youtube'].includes(platform))throw new HttpError(400,'Choose a supported account.');await pausePlatform(owner,platform,'Account disconnected. Review and reschedule after reconnecting.');await run('DELETE FROM connections WHERE owner=? AND platform=?',owner,platform);await run('DELETE FROM oauth_states WHERE owner=? AND provider=?',owner,platform);const prefs=await settings(owner);if(platform==='instagram'){await run("DELETE FROM oauth_states WHERE owner=? AND provider='facebook'",owner);if(prefs.pendingPagesTarget==='instagram'){delete prefs.pendingPages;delete prefs.pendingPagesExpires;delete prefs.pendingPagesTarget;}}if(platform==='facebook'){delete prefs.pendingPages;delete prefs.pendingPagesExpires;delete prefs.pendingPagesTarget;}if(platform==='youtube'){delete prefs.pendingYoutube;delete prefs.pendingYoutubeExpires;}await saveSettings(owner,prefs);await log(owner,`${platform} disconnected; affected automations paused.`,'connection');return {disconnected:true};}
 export async function apiFetch(url:string,init:RequestInit={}){const res=await fetch(url,{...init,signal:AbortSignal.timeout(25000)});let data:any;try{data=await res.json()}catch{data={}}if(!res.ok||data.error){const msg=data.error?.message||data.error_description||`Platform request failed (${res.status}).`;throw new HttpError(502,String(msg).slice(0,300));}return data;}
-export function connectionReturn(request:Request,provider:string,notice:string,message=''){const u=new URL('/?view=connections',request.url);u.searchParams.set('provider',provider);u.searchParams.set('connectionNotice',notice);if(message)u.searchParams.set('connectionMessage',message.slice(0,250));return Response.redirect(u.toString(),302);}
+export function connectionReturn(request:Request,provider:string,notice:string,message=''){const u=new URL(appEndpoint(request,'?view=connections'));u.searchParams.set('provider',provider);u.searchParams.set('connectionNotice',notice);if(message)u.searchParams.set('connectionMessage',message.slice(0,250));return Response.redirect(u.toString(),302);}
 export async function oauthStart(request:Request,owner:string,provider:string){
  const e=await appConfiguration(owner);if(!['youtube','facebook','instagram'].includes(provider))throw new HttpError(400,'This connection is not available.');
  const ready=await setup(owner);if(!(provider==='instagram'?ready.instagramDirect:ready[provider as 'youtube'|'facebook']))return connectionReturn(request,provider,'setup_needed');
  if(provider==='facebook'){const prefs=await settings(owner);delete prefs.pendingPages;delete prefs.pendingPagesExpires;delete prefs.pendingPagesTarget;await saveSettings(owner,prefs);}
- const state=uid()+uid(),callback=new URL(`/api/oauth/${provider}/callback`,request.url).toString(),targetMode=new URL(request.url).searchParams.get('target')==='instagram'?'instagram':'facebook';
+ const state=uid()+uid(),callback=apiEndpoint(request,`oauth/${provider}/callback`),targetMode=new URL(request.url).searchParams.get('target')==='instagram'?'instagram':'facebook';
  await run('DELETE FROM oauth_states WHERE created<?',new Date(Date.now()-600000).toISOString());
  await run('INSERT INTO oauth_states (id,owner,provider,created,verifier) VALUES (?,?,?,?,?)',state,owner,provider,now(),JSON.stringify({target:targetMode}));
  let target:URL;
@@ -112,7 +114,7 @@ export async function oauthCallback(request:Request,owner:string,provider:string
  const s=state?await one('DELETE FROM oauth_states WHERE id=? AND owner=? AND provider=? AND created>? RETURNING *',state,owner,provider,new Date(Date.now()-600000).toISOString()):null;
  if(!s)throw new HttpError(400,'Connection expired. Start again from Connect.');
  if(url.searchParams.get('error')||!code)return connectionReturn(request,provider,'cancelled');
- const e=await appConfiguration(owner),callback=new URL(`/api/oauth/${provider}/callback`,request.url).toString();
+ const e=await appConfiguration(owner),callback=apiEndpoint(request,`oauth/${provider}/callback`);
  if(provider==='youtube'){
  const token=await apiFetch('https://oauth2.googleapis.com/token',{method:'POST',body:new URLSearchParams({code,client_id:e.GOOGLE_CLIENT_ID,client_secret:e.GOOGLE_CLIENT_SECRET,redirect_uri:callback,grant_type:'authorization_code'})});
  if(!token.refresh_token)throw new HttpError(400,'Offline access was not granted. Reconnect and approve the requested permissions.');

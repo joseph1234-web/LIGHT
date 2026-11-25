@@ -1,4 +1,5 @@
 'use client';
+import {publicApiUrl} from '../../lib/public-paths';
 import {useEffect,useState} from 'react';
 import {ArrowRight,ExternalLink,KeyRound,Loader2,ShieldCheck,X} from 'lucide-react';
 import MetaSetupHelp from './meta-setup-help';
@@ -11,7 +12,7 @@ export default function ConnectionSetup({target,initialProvider,onClose,onSaved}
  const [appId,setAppId]=useState(''),[secret,setSecret]=useState(''),[version,setVersion]=useState(''),[configId,setConfigId]=useState('');
  useEffect(()=>{const controller=new AbortController();fetch('/api/connections/setup',{signal:controller.signal,cache:'no-store'}).then(async r=>{const d:any=await r.json();if(!r.ok)throw new Error(d.error||'Could not load private app settings.');setData(d);}).catch(e=>{if(e.name!=='AbortError')setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});return()=>controller.abort();},[]);
  useEffect(()=>{const app=data?.apps?.[provider];setAppId(app?.appId||'');setVersion(app?.version||'');setConfigId(app?.configId||'');setSecret('');},[provider,data]);
- const callback=(typeof window!=='undefined'?window.location.origin:'')+'/api/oauth/'+provider+'/callback';
+ const callback=publicApiUrl('oauth/'+provider+'/callback');
  const authorize='/api/oauth/'+provider+'/start'+(target==='instagram'&&provider==='facebook'?'?target=instagram':'');
  async function save(e:React.FormEvent){e.preventDefault();setSaving(true);setError('');try{const r=await fetch('/api/connections/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider,appId,appSecret:secret,...(provider==='youtube'?{}:{version}),...(provider==='facebook'?{configId}:{})})});const d:any=await r.json();if(!r.ok)throw new Error(d.error||'Could not save app settings.');setData(d);setSecret('');await onSaved();setSaved(true);}catch(e){setError((e as Error).message)}finally{setSaving(false)}}
  return <div className="modal-overlay" onClick={()=>{if(!saving)onClose()}}><section className="modal connection-setup-modal" role="dialog" aria-modal="true" aria-labelledby="connection-setup-title" onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==='Escape'&&!saving)onClose()}}>

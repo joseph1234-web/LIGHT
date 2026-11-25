@@ -1,5 +1,5 @@
 import {checkpointRetiredCanva} from './canva-history';
-import {E,one,rows,run,uid,now,HttpError,seal,unseal} from '../server';
+import {E,one,rows,run,uid,now,HttpError,seal,unseal,apiEndpoint} from '../server';
 import {churchConfig,prepareChurchPosts} from './server';
 import {churchCanvaRender,downloadCanvaPng} from './canva';
 import {canvaValues,checkCanvaFields,requiredCanvaFields,optionalCanvaFields,canvaFieldHelp} from './canva-fields';
@@ -86,7 +86,7 @@ export async function saveCanvaApp(owner:string,input:any){
 }
 export async function connectCanva(owner:string,request:Request){
  const a=await app(owner);if(!a.clientId||!a.clientSecret||!E().TOKEN_ENCRYPTION_KEY)throw new HttpError(409,'Save your Canva developer app keys first.');
- const state=uid()+uid(),verifier=b64(crypto.getRandomValues(new Uint8Array(48))),redirectUri=new URL('/api/canva/callback',request.url).toString();
+ const state=uid()+uid(),verifier=b64(crypto.getRandomValues(new Uint8Array(48))),redirectUri=apiEndpoint(request,'canva/callback');
  const authorization={clientId:a.clientId,redirectUri,codeChallengeMethod};
  await run("DELETE FROM oauth_states WHERE owner=? AND provider='canva'",owner);
  await run("INSERT INTO oauth_states (id,owner,provider,created,verifier) VALUES (?,?,'canva',?,?)",state,owner,now(),await seal({verifier,redirectUri,appHash:await digest(a.clientId+':'+a.clientSecret),authorization}));

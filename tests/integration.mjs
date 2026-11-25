@@ -3,8 +3,11 @@ import {DatabaseSync} from 'node:sqlite';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
 import {join} from 'node:path';
-const sql=new DatabaseSync(':memory:');
-for(const f of (await readdir('drizzle')).filter(x=>x.endsWith('.sql')).sort())sql.exec(await readFile(join('drizzle',f),'utf8'));
+import {traceDatabase} from './sql-transcript.mjs';
+const sourceSql=new DatabaseSync(':memory:');
+for(const f of (await readdir('drizzle')).filter(x=>x.endsWith('.sql')).sort())sourceSql.exec(await readFile(join('drizzle',f),'utf8'));
+const transcript=[];
+const sql=process.env.EKKLO_SQL_TRANSCRIPT?traceDatabase(sourceSql,transcript):sourceSql;
 function prepared(query,args=[]){const statement=()=>sql.prepare(query);return {
  bind(...values){return prepared(query,values)},
  async first(){return statement().get(...args)||null},
@@ -1011,3 +1014,5 @@ delete bindings.CHURCH_PREPARATION_REQUEST;
 delete bindings.CHURCH_AUTOMATION_OWNER_EMAIL;delete bindings.CHURCH_SCHEDULER_ENABLED;delete bindings.CHURCH_SCHEDULER_ACCOUNT_EMAIL;
 
 console.log(`\n${checks} integration checks passed. No real external posts were sent.`);
+
+if(process.env.EKKLO_SQL_TRANSCRIPT)await writeFile(process.env.EKKLO_SQL_TRANSCRIPT,JSON.stringify(transcript));

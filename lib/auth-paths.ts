@@ -7,5 +7,5 @@ function safeRelativeReturnPath(value:string):string{
  if(url.origin!=='https://app.local'||[signInPath,signOutPath,'/callback'].includes(url.pathname))return '/';
  return `${url.pathname}${url.search}${url.hash}`;
 }
-export function chatGPTSignInPath(returnTo:string){return `${signInPath}?return_to=${encodeURIComponent(safeRelativeReturnPath(returnTo))}`;}
-export function chatGPTSignOutPath(returnTo='/'){return `${signOutPath}?return_to=${encodeURIComponent(safeRelativeReturnPath(returnTo))}`;}
+export function chatGPTSignInPath(returnTo:string){return globalThis.__EKKLO_STANDALONE__?.appUrl||`${signInPath}?return_to=${encodeURIComponent(safeRelativeReturnPath(returnTo))}`;}
+export function chatGPTSignOutPath(returnTo='/'){return globalThis.__EKKLO_STANDALONE__?globalThis.__EKKLO_STANDALONE__.appUrl+'?logout=1':`${signOutPath}?return_to=${encodeURIComponent(safeRelativeReturnPath(returnTo))}`;}

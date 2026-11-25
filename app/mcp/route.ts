@@ -1,5 +1,5 @@
 import {runChurchBackground,restartChurchBackground} from '../../lib/church/automation-worker';
-import { user, json, studioState, publicSettings } from '../../lib/server';
+import { user, json, studioState, publicSettings, E } from '../../lib/server';
 import { runQueue } from '../../lib/publisher';
 import {churchState,previewChurchImage,churchConfig} from '../../lib/church/server';
 import {churchCanvaJobs,churchCanvaRender} from '../../lib/church/canva';
@@ -18,7 +18,12 @@ const tools=[
  {name:'studio_status',description:'Read the private ekklo. studio connection, queue and background runner status. No social credentials are returned.',inputSchema:{type:'object',properties:{},additionalProperties:false}},
  {name:'run_publishing_queue',description:'Prepare daily Bible verse images, Saturday service announcements and enabled event countdowns; publish only when church auto-publishing and the correct Facebook Page are enabled. Also check previously approved picture and video jobs and reconcile platform confirmations. Autopilot uses only previously reviewed media and captions, and each delivery must match its saved social account. Never copies third-party videos. TikTok remains a manual export. Also verifies this signed-in background runner. Safe to call repeatedly.',inputSchema:{type:'object',properties:{},additionalProperties:false}}
 ];
-export async function POST(request:Request){let id:any=null;try{const b:any=await request.json();id=b.id??null;
+export async function POST(request:Request){
+ const target=E().EKKLO_BACKEND_BRIDGE_URL,secret=E().EKKLO_BACKEND_BRIDGE_SECRET;
+ if(target&&secret){user(request);const url=new URL(target);if(url.protocol!=='https:'||!url.hostname.endsWith('.supabase.co'))throw new Error('The publishing connection is not configured correctly.');return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-ekklo-bridge-secret':secret,'x-ekklo-owner':user(request),'x-ekklo-email':request.headers.get('oai-authenticated-user-email')||''},body:await request.arrayBuffer(),redirect:'error'});}
+ return localRequest(request);
+}
+async function localRequest(request:Request){let id:any=null;try{const b:any=await request.json();id=b.id??null;
  if(b.method==='server/discover')return json({jsonrpc:'2.0',id,result:{supportedVersions:['2026-07-28'],capabilities:{tools:{}}}});
  if(b.method==='initialize')return json({jsonrpc:'2.0',id,result:{protocolVersion:'2026-07-28',serverInfo:{name:'ekklo',version:'2.0.0'},capabilities:{tools:{}}}});
  if(b.method==='notifications/initialized')return new Response(null,{status:204});

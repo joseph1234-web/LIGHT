@@ -13,9 +13,12 @@ import {chatGPTSignInPath} from '../../../lib/auth-paths';
 import {clearChurchPending,undoChurchClear,resumeChurchPreparation,removeChurchPost,restoreRemovedChurchPost} from '../../../lib/church/queue';
 import {reviewCanvaPost,returnFromCanva} from '../../../lib/church/canva-review';
 import {churchDashboard} from '../../../lib/church/dashboard';
+import {migrationExport} from '../../../lib/migration-export';
+import {appEndpoint} from '../../../lib/server';
 export const dynamic='force-dynamic';
 function navigationRedirect(url:string){return new Response(null,{status:302,headers:{Location:url,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}
 async function handle(request:Request){try{
+ if(new URL(request.url).pathname.startsWith('/api/migration/'))return await migrationExport(request);
  csrf(request);const url=new URL(request.url),path=url.pathname.replace(/^\/api\//,''),method=request.method;
  // A browser navigation lets the Site's sign-in screen finish at the top level.
  if(path==='canva/start'&&method==='GET'){
@@ -35,7 +38,7 @@ async function handle(request:Request){try{
  if(path==='canva/automation'&&method==='POST')return json(await enableCanvaAutomation(owner,await body(request)));
  if(path==='canva/review'&&method==='POST')return json(await reviewCanvaPost(owner,await body(request),url.origin));
  if(path==='canva/return'&&method==='GET'){
-  const target=new URL('/?view=church&churchTab=posts',url);
+  const target=new URL(appEndpoint(request,'?view=church&churchTab=posts'));
   try{const result=await returnFromCanva(owner,url.searchParams.get('correlation_jwt')||'');target.searchParams.set('reviewPost',result.postId);target.searchParams.set('canvaReviewNotice','Your saved Canva edits are syncing. The last ready image stays scheduled.');}
   catch(e){target.searchParams.set('canvaReviewNotice',e instanceof HttpError?e.message:'Canva return could not be checked. Open Review post to see the saved image.');}
   return navigationRedirect(target.toString());
@@ -44,7 +47,7 @@ async function handle(request:Request){try{
  if(path==='canva/run'&&method==='POST')return json(await advanceChurchAutomation(owner));
  if(path==='canva/advance'&&method==='POST'){const input=await body(request);return json(await advanceChurchAutomation(owner,{publishVerified:input.publishReady===true}));}
  if(path.startsWith('canva/preview/')&&method==='GET')return new Response(await generatedCanvaPreview(owner,path.split('/')[2],url.searchParams.get('renderId')||'') as BodyInit,{headers:{'Content-Type':'image/png','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
- if(path==='canva/callback'&&method==='GET'){const target=new URL('/?view=church&churchTab=templates',url);try{await canvaCallback(owner,request);target.searchParams.set('canvaNotice','connected');}catch(e){target.searchParams.set('canvaNotice',e instanceof HttpError?e.message:'Canva sign-in could not finish. Check Connection details before starting a new connection.');}return navigationRedirect(target.toString());}
+ if(path==='canva/callback'&&method==='GET'){const target=new URL(appEndpoint(request,'?view=church&churchTab=templates'));try{await canvaCallback(owner,request);target.searchParams.set('canvaNotice','connected');}catch(e){target.searchParams.set('canvaNotice',e instanceof HttpError?e.message:'Canva sign-in could not finish. Check Connection details before starting a new connection.');}return navigationRedirect(target.toString());}
  if(path==='church/template'&&method==='POST'){await churchConfig(owner);return json(await saveUploadedTemplate(owner,request));}
  if(path.startsWith('church/template/')&&method==='GET'){await churchConfig(owner);return new Response(await getTemplatePreview(owner,path.split('/')[2]),{headers:{'Content-Type':'image/png','Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}});}
  if(path==='church/use-christmas-pack'&&method==='POST')return json(await adoptChristmasPack(owner));
