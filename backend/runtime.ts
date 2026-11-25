@@ -11,7 +11,17 @@ export function database(){
  const request=requests.getStore();if(!request)throw new Error('Database access requires an active request.');
  if(request.connection)return request.connection;
  const url=Deno.env.get('SUPABASE_DB_URL');if(!url)throw new Error('The backend database connection is not configured.');
- return request.connection=postgres(url,{prepare:false,max:1,idle_timeout:5,connect_timeout:15,types:{bigint:{to:20,from:[20],serialize:(value:any)=>String(value),parse:(value:string)=>Number(value)}}});
+ const endpoint=new URL(url);
+ // Use the transaction pooler shown in this project's Connect settings for
+ // short-lived Edge requests. Keep the password and verify the pooler's TLS.
+ if(endpoint.hostname==='db.yznhkfyctmsmkeibepsh.supabase.co'){
+  endpoint.hostname='aws-1-ap-southeast-1.pooler.supabase.com';endpoint.port='6543';
+  endpoint.username=decodeURIComponent(endpoint.username)+'.yznhkfyctmsmkeibepsh';
+  endpoint.searchParams.set('sslmode','verify-full');
+ }
+ // max_pipeline is supported by the v3 driver but absent from its type file.
+ const options={prepare:false,max:1,max_pipeline:1,idle_timeout:5,connect_timeout:15,types:{bigint:{to:20,from:[20],serialize:(value:any)=>String(value),parse:(value:string)=>Number(value)}}};
+ return request.connection=postgres(endpoint.toString(),options);
 }
 export function adminHeaders(){
  let keys:Record<string,string>={};try{keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}');}catch{}
@@ -25,7 +35,11 @@ export async function context(){
  const sql=database(),settings=await state();
  const runtime=JSON.parse(await vault('ekklo-runtime')||'{}');
  const exec=async(connection:any,{sql,values}:{sql:string;values:any[]})=>{const result=await connection.unsafe(sql,values);return {rows:[...result],affectedRows:result.count};};
- const DB=createD1Adapter((statement:any)=>exec(sql,statement),(callback:any)=>sql.begin((tx:any)=>callback((statement:any)=>exec(tx,statement))));
+ // Serialize this request's statements, including whole transactions. The
+ // transaction pooler must receive a completed exchange before the next query.
+ let pending:Promise<unknown>=Promise.resolve();
+ function serial<T>(run:()=>Promise<T>){const next=pending.then(run);pending=next.then(()=>undefined,()=>undefined);return next;}
+ const DB=createD1Adapter((statement:any)=>serial(()=>exec(sql,statement)),(callback:any)=>serial(()=>sql.begin((tx:any)=>callback((statement:any)=>exec(tx,statement)))));
  const url=Deno.env.get('SUPABASE_URL')!;
  const BUCKET=new PrivateStorage(url,adminHeaders());
  return {...runtime,DB,BUCKET,PUBLIC_APP_URL:settings.app_url,PUBLIC_API_BASE:settings.api_base,ASSETS:{fetch(request:Request){const path=new URL(request.url).pathname;return fetch(new URL(path.replace(/^\//,''),settings.app_url),{redirect:'error'});}}};

@@ -77,7 +77,7 @@ async function dispatch(request:Request):Promise<Response>{
     }
    }
   }else response=output({error:'Not found.'},404);
- }catch(error){console.error('ekklo backend request failed',error instanceof Error?error.name:'Error');response=output({error:'The request could not be completed. Please try again.'},500);}
+ }catch(error){const detail=error as {name?:string;code?:string;message?:string;cause?:{code?:string}};const transport=String(detail.message||'').match(/UnknownIssuer|CERT_HAS_EXPIRED|SELF_SIGNED_CERT_IN_CHAIN|DEPTH_ZERO_SELF_SIGNED_CERT|ERR_TLS_CERT_ALTNAME_INVALID|CONNECTION_CLOSED|ECONNREFUSED|ETIMEDOUT|Tenant or user not found|password authentication failed/gi);console.error('ekklo backend request failed',detail.name||'Error',detail.code||'',detail.cause?.code||'',transport?.join(',')||'');response=output({error:'The request could not be completed. Please try again.'},500);}
  return settings?cors(response,settings.app_url):response;
 }
 function cors(response:Response,appUrl:string){const headers=new Headers(response.headers);headers.set('Access-Control-Allow-Origin',new URL(appUrl).origin);headers.set('Access-Control-Expose-Headers','Content-Type,Content-Length,Content-Range,Content-Disposition,Accept-Ranges');headers.set('Vary','Origin');headers.set('X-Content-Type-Options','nosniff');return new Response(response.body,{status:response.status,statusText:response.statusText,headers});}

@@ -31,6 +31,10 @@ and filter records by the mapped workspace owner. Caller-supplied Sites identity
 headers are removed. Media is kept in the private `ekklo-private` storage bucket
 and is served through authenticated endpoints.
 
+The Edge backend uses this project's transaction pooler on port 6543 and releases
+its connection after each HTTP request. It preserves the built-in database
+password and verifies the pooler's TLS; no database credential is included in the source.
+
 ## Controlled cutover
 
 The backend starts with `ready=false` and its own scheduler paused. The original
