@@ -9,13 +9,13 @@ export async function migrationStep(){
  const settings=JSON.parse(await vault('ekklo-migration-source')||'null');if(!settings?.url||!settings?.gateToken||!settings?.exportKey)throw new Error('The migration source connection is not ready.');
  const source=new URL(settings.url);if(source.protocol!=='https:'||!source.hostname.endsWith('.chatgpt.site'))throw new Error('Invalid migration source.');
  async function sourceFetch(path:string,query:Record<string,string>={}){const url=new URL('/api/migration/'+path,source);for(const [key,value]of Object.entries(query))url.searchParams.set(key,value);const response=await fetch(url,{headers:{'OAI-Sites-Authorization':'Bearer '+settings.gateToken,'x-ekklo-migration-key':settings.exportKey},redirect:'error',signal:AbortSignal.timeout(45000)});if(!response.ok)throw new Error('The original workspace export is unavailable ('+response.status+').');return response;}
- let checkpoint=current.checkpoint||{};
+ let checkpoint=typeof current.checkpoint==='string'?JSON.parse(current.checkpoint):current.checkpoint||{};
  if(current.phase==='new'){
   const meta=metadata.parse(await (await sourceFetch('meta')).json());if(!meta.frozen)throw new Error('Pause the original workspace before copying its final records.');
   if(appTables.some(table=>!meta.tables.includes(table)))throw new Error('The original workspace schema is incomplete.');
   if(!meta.runtime?.TOKEN_ENCRYPTION_KEY)throw new Error('The original connection-encryption key is unavailable. Existing account connections were not changed.');
   await saveVault('ekklo-runtime',JSON.stringify(meta.runtime));
-  await sql.unsafe("UPDATE ekklo_private.migration_state SET phase='tables',checkpoint=$1::jsonb,updated=now() WHERE id=true",[JSON.stringify({table:0,offset:0,counts:{}})]);
+  await sql.unsafe("UPDATE ekklo_private.migration_state SET phase='tables',checkpoint=$1::text::jsonb,updated=now() WHERE id=true",[JSON.stringify({table:0,offset:0,counts:{}})]);
   return {phase:'tables',copiedTables:0};
  }
  if(current.phase==='tables'){
@@ -38,7 +38,7 @@ export async function migrationStep(){
     for(const key of keys.filter(Boolean))await tx.unsafe('INSERT INTO ekklo_private.migration_objects(key) VALUES($1) ON CONFLICT DO NOTHING',[key]);
    }
    checkpoint={...checkpoint,counts:{...checkpoint.counts,[table]:(checkpoint.counts?.[table]||0)+page.rows.length},offset:page.nextOffset??0,table:page.nextOffset===null?checkpoint.table+1:checkpoint.table};
-   await tx.unsafe('UPDATE ekklo_private.migration_state SET phase=$1,checkpoint=$2::jsonb,updated=now() WHERE id=true',[checkpoint.table>=appTables.length?'objects':'tables',JSON.stringify(checkpoint)]);
+   await tx.unsafe('UPDATE ekklo_private.migration_state SET phase=$1,checkpoint=$2::text::jsonb,updated=now() WHERE id=true',[checkpoint.table>=appTables.length?'objects':'tables',JSON.stringify(checkpoint)]);
   });
   return {phase:checkpoint.table>=appTables.length?'objects':'tables',table,rows:page.rows.length,copiedTables:checkpoint.table};
  }
