@@ -20,7 +20,7 @@ const tools=[
 ];
 export async function POST(request:Request){
  const target=E().EKKLO_BACKEND_BRIDGE_URL,secret=E().EKKLO_BACKEND_BRIDGE_SECRET;
- if(target&&secret){user(request);const url=new URL(target);if(url.protocol!=='https:'||!url.hostname.endsWith('.supabase.co'))throw new Error('The publishing connection is not configured correctly.');return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-ekklo-bridge-secret':secret,'x-ekklo-owner':user(request),'x-ekklo-email':request.headers.get('oai-authenticated-user-email')||''},body:await request.arrayBuffer(),redirect:'error'});}
+ if(target&&secret){user(request);const url=new URL(target);if(url.protocol!=='https:'||!url.hostname.endsWith('.supabase.co'))throw new Error('The publishing connection is not configured correctly.');const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-ekklo-bridge-secret':secret,'x-ekklo-owner':user(request),'x-ekklo-email':request.headers.get('oai-authenticated-user-email')||''},body:await request.arrayBuffer(),redirect:'manual'});if(response.status>=300&&response.status<400){await response.body?.cancel();throw new Error('The publishing connection returned an unexpected redirect.');}return response;}
  return localRequest(request);
 }
 async function localRequest(request:Request){let id:any=null;try{const b:any=await request.json();id=b.id??null;
