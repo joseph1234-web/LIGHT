@@ -9,7 +9,8 @@ A church publishing workspace for Bible verses, Sunday invitations, Christmas co
 | What you want to change | File |
 | --- | --- |
 | Main dashboard, calendar, search and filters | `app/components/church-dashboard.tsx` |
-| Colors, spacing, responsive layout and animations | `app/ekklo.css` |
+| Light/dark colors and theme switch styling | `app/theme.css` |
+| Spacing, responsive layout and animations | `app/ekklo.css` |
 | Navigation and media composer | `app/page.tsx` |
 | Browser title and description | `app/layout.tsx` |
 | Your supplied logo | `public/ekklo-mark.png` |
@@ -18,6 +19,10 @@ A church publishing workspace for Bible verses, Sunday invitations, Christmas co
 | Scheduling and Facebook delivery | `lib/church/server.ts` |
 
 Open a file in GitHub and use Edit, or clone the repository in your editor. A GitHub commit saves source; making it live also requires a deployment to the current server host. The repository is not automatically linked to production deployment. See [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Appearance
+
+The Light and Dark controls in the top bar apply across the workspace. Your browser remembers your choice. On a first visit, the theme follows your device preference. Shared semantic colors in `app/theme.css` cover panels, forms, dialogs, statuses, and focus outlines; artwork and social logos retain their own colors.
 
 ## Run and verify
 
