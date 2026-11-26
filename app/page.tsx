@@ -27,7 +27,7 @@ export default function Studio(){
  const fileRef=useRef<HTMLInputElement>(null);const timer=useRef<any>(null);
  function notify(msg:string){setToast(msg);clearTimeout(timer.current);timer.current=setTimeout(()=>setToast(''),6000);}
  async function refresh(){try{const s=await api('state');setState(s);setEditingSettings((v:any)=>v||s.settings);setError('');return s;}catch(e){setError((e as Error).message);return null;}finally{setLoaded(true)}}
- useEffect(()=>{const v=new URLSearchParams(window.location.search).get('view');if(v&&[...nav.map(n=>n.id),'connections','settings','help'].includes(v))setView(v);refresh();api('discovery?region=US').then(setIdeas).catch(()=>{});},[]);
+ useEffect(()=>{const v=new URLSearchParams(window.location.search).get('view');if(v&&[...nav.map(n=>n.id),'connections','settings','help'].includes(v))setView(v);refresh();api('discovery?region=US').then(setIdeas).catch(()=>{});const restored=()=>{void refresh();};window.addEventListener('ekklo:session-ready',restored);return()=>window.removeEventListener('ekklo:session-ready',restored);},[]);
  function go(v:string,tab?:string){setView(v);setMobile(false);window.history.replaceState({},'',workspacePath(v==='overview'?'':'?view='+v+(tab?'&churchTab='+tab:'')));window.scrollTo({top:0,behavior:'instant'});}
  function create(type:'image'|'video'='image'){const available=platforms.filter(p=>p!=='tiktok'&&(type!=='image'||p!=='youtube')&&state.connections.some(c=>c.platform===p));setDraft({...emptyDraft(),mediaType:type,...(type==='image'?{platforms:['facebook','instagram'],music:'none' as const}:{}),...(available.length?{platforms:available}:{})});go('create');}
  function change(p:Partial<Draft>){setDraft(d=>({...d,...p,...('approved' in p?{}:{approved:false})}));}

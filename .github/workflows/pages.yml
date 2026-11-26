@@ -25,6 +25,7 @@ jobs:
       - run: npm run install:ci
       - run: npx tsc --noEmit
       - run: node tests/session-integration.mjs
+      - run: node tests/transport-integration.mjs
       - run: node tests/mcp-bridge-integration.mjs
       - run: npm run check:postgres
       - run: npm run build:pages

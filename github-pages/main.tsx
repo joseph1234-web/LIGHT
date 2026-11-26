@@ -18,13 +18,25 @@ async function transport(session:Session|null){
 function Shell({children}:{children:React.ReactNode}){return <div className="ekklo-signin"><div className="ekklo-signin-card"><div className="signin-brand"><img src={base+'ekklo-mark.png'} alt=""/><span>ekklo<span>.</span></span></div><p className="signin-tagline">ONE CHURCH. EVERY PLATFORM.</p>{children}</div></div>;}
 function Application(){
  const [session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[mode,setMode]=useState<'signin'|'signup'|'recover'|'password'>('signin');
- async function restore(){try{const next=await account.current();await transport(next);setSession(next);}catch(e){setError((e as Error).message);}finally{setLoading(false);}}
- useEffect(()=>{(async()=>{
+ async function restore(){try{const next=await account.current();await transport(next);setSession(next);setError('');return true;}catch(e){setSession(account.read());setError((e as Error).message);return false;}finally{setLoading(false);}}
+ useEffect(()=>{
+ const renew=(event:MessageEvent)=>{
+  if(event.data?.type!=='EKKLO_RENEW_ACCESS'||!event.ports[0])return;
+  const port=event.ports[0];
+  account.current().then(next=>{setSession(next);port.postMessage({access:next?{token:next.access_token,expiresAt:next.expires_at}:null});port.close();},()=>{port.postMessage({error:true});port.close();});
+ };
+ navigator.serviceWorker.addEventListener('message',renew);
+ (async()=>{
   const hash=new URLSearchParams(window.location.hash.slice(1));
   if(hash.get('access_token')&&hash.get('refresh_token')){account.save({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),expires_in:Number(hash.get('expires_in')||3600)});if(hash.get('type')==='recovery')setMode('password');history.replaceState({},'',base+window.location.search);}
   if(new URLSearchParams(location.search).has('logout')){await account.signOut();history.replaceState({},'',base);}
   await restore();
- })();const timer=setInterval(()=>{account.current().then(async s=>{await transport(s);setSession(s);}).catch(()=>{});},45000);const storage=(e:StorageEvent)=>{if(e.key===account.storageKey)restore();};window.addEventListener('storage',storage);return()=>{clearInterval(timer);window.removeEventListener('storage',storage);};},[]);
+ })();
+ const resume=async()=>{if(document.visibilityState==='visible'&&await restore())window.dispatchEvent(new Event('ekklo:session-ready'));};
+ const timer=setInterval(()=>{void restore();},45000);
+ const storage=(e:StorageEvent)=>{if(e.key===account.storageKey)void resume();};
+ window.addEventListener('storage',storage);window.addEventListener('focus',resume);window.addEventListener('online',resume);window.addEventListener('pageshow',resume);document.addEventListener('visibilitychange',resume);
+ return()=>{clearInterval(timer);navigator.serviceWorker.removeEventListener('message',renew);window.removeEventListener('storage',storage);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);window.removeEventListener('pageshow',resume);document.removeEventListener('visibilitychange',resume);};},[]);
  useEffect(()=>{const click=async(event:MouseEvent)=>{
   const anchor=(event.target as Element)?.closest?.('a');if(!anchor||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
   const url=new URL(anchor.href,location.href);if(url.origin!==location.origin)return;

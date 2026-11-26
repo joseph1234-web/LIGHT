@@ -59,5 +59,41 @@ try {
  rejectLogin=true;
  await assert.rejects(()=>account.signIn('church@example.test','invalid-fixture'),/Invalid login credentials/);
  assert.equal(account.read(),null);
- console.log('Browser fetch receiver, sign-in, refresh, recovery, password update, email confirmation, sign-out, and account errors passed.');
+ Object.defineProperty(navigator,'onLine',{value:true,configurable:true});
+ const expired={access_token:'old-access',refresh_token:'saved-refresh',expires_at:1};
+ for(const request of [
+  async()=>{throw new TypeError('Failed to fetch');},
+  async()=>Response.json({message:'Temporarily unavailable'},{status:503}),
+  async()=>Response.json({message:'Too many requests'},{status:429}),
+  async()=>new Response('Upstream unavailable',{status:502}),
+  async()=>Response.json({expires_in:3600})
+ ]){
+  const saved=new AccountSession(config,new MemoryStorage(),request);saved.save(expired);
+  await assert.rejects(()=>saved.current());
+  assert.equal(saved.read()?.refresh_token,expired.refresh_token,'A temporary refresh failure must preserve sign-in for a later retry.');
+ }
+ for(const code of ['refresh_token_not_found','refresh_token_already_used','session_not_found','session_expired']){
+  const revoked=new AccountSession(config,new MemoryStorage(),async()=>Response.json({code,msg:'Session ended'},{status:400}));revoked.save(expired);
+  assert.equal(await revoked.current(),null,'A confirmed revoked session requires sign-in.');
+  assert.equal(revoked.read(),null);
+ }
+ let completeRefresh,refreshCalls=0;
+ const delayed=new AccountSession(config,new MemoryStorage(),async()=>{refreshCalls++;return new Promise(resolve=>{completeRefresh=resolve;});});
+ delayed.save(expired);const waiting=delayed.current(),sameRefresh=delayed.current();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(refreshCalls,1,'Concurrent requests must share one refresh.');
+ completeRefresh(Response.json({access_token:'renewed-access',refresh_token:'rotated-refresh',expires_in:3600}));
+ assert.equal((await waiting).access_token,'renewed-access');await sameRefresh;
+ const reopened=new AccountSession(config,delayed.storage,async()=>{throw new Error('A saved current session needs no new login.');});
+ assert.equal((await reopened.current()).refresh_token,'rotated-refresh','Closing and reopening must restore the persisted session.');
+ delayed.save(expired);const duringSignOut=delayed.current();await new Promise(resolve=>setImmediate(resolve));
+ delayed.storage.removeItem(delayed.storageKey);
+ completeRefresh(Response.json({access_token:'late-access',refresh_token:'late-refresh',expires_in:3600}));
+ assert.equal(await duringSignOut,null,'A late refresh must not undo sign-out.');assert.equal(delayed.read(),null);
+ delayed.save(expired);const olderLogin=delayed.current();await new Promise(resolve=>setImmediate(resolve));
+ delayed.save({access_token:'new-account-access',refresh_token:'new-account-refresh',expires_in:3600});
+ completeRefresh(Response.json({code:'refresh_token_already_used',msg:'Session ended'},{status:400}));
+ assert.equal((await olderLogin).refresh_token,'new-account-refresh','An old refresh must not delete a newer sign-in.');
+ console.log('Account sign-in, persistent reopening, transient recovery, token rotation, concurrent refresh, and sign-out isolation passed.');
 } finally {globalThis.fetch=originalFetch;}
+
