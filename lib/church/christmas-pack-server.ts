@@ -7,7 +7,7 @@ export async function syncChristmasPack(owner:string,c:ChurchConfig){
  if(c.christmasImageSource!=='uploaded_pack')return;
  const list=await rows("SELECT * FROM church_posts WHERE owner=? AND series='christmas' AND scheduled>=? AND claimed IS NULL AND remote_id IS NULL AND status IN ('draft','scheduled','waiting_connection','paused','needs_review')",owner,new Date(Date.now()-75*60000).toISOString());
  for(const row of list){
-  const content=JSON.parse(row.payload);if(churchHasSocialAttempt(row)||content.christmasImage?.packId===christmasPack.id)continue;
+  const content=JSON.parse(row.payload);if(churchHasSocialAttempt(row)||content.countdownImage||content.spec?.occasion==='newyear'||content.christmasImage?.packId===christmasPack.id)continue;
   const selected=christmasPackImage(row.local_date);
   if(content.canva){if(content.retiredCanva&&content.retiredCanva.renderId!==content.canva.renderId)content.retiredCanvaHistory=[...(content.retiredCanvaHistory||[]),content.retiredCanva];content.retiredCanva=content.canva;}delete content.canva;if(content.christmasImage)content.retiredChristmasImage=content.christmasImage;content.christmasImage=selected;
   const status=!selected.available?'needs_review':row.status==='needs_review'?(c.autoPublish?'scheduled':'draft'):row.status;

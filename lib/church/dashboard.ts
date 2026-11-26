@@ -1,3 +1,4 @@
+import {countdownSeason} from './countdown';
 import {E,one,rows} from '../server';
 import {churchState} from './server';
 import {runnerHealth} from './runner-health';
@@ -19,7 +20,7 @@ export async function churchDashboard(owner:string) {
   background:runnerHealth(config.lastCloudRun,configured),connection:data.connection?{label:data.connection.label,ready:pageReady}:null,
   canva:{required:usesCanva,connected:!!canvaAccount&&!canvaAccount.refresh_claim,enabled:!!canva.enabled},
   metrics:{scheduled:pending.length,ready:pending.filter(p=>p.status==='scheduled'&&p.imageReady).length,needsAttention:pending.filter(p=>!p.imageReady||['needs_review','waiting_connection'].includes(p.status)).length,published:posts.filter(p=>p.status==='published').length},
-  series:[{id:'daily',name:'Daily Bible verse',enabled:config.dailyEnabled,time:config.dailyTime,frequency:'Every day'},{id:'service',name:'Sunday invitation',enabled:config.serviceEnabled,time:config.saturdayTime,frequency:'Every Saturday'},{id:'christmas',name:'Christmas countdown',enabled:config.christmasEnabled,time:config.christmasTime,frequency:'During your countdown'}],
+  series:[{id:'daily',name:'Daily Bible verse',enabled:config.dailyEnabled,time:config.dailyTime,frequency:'Every day'},{id:'service',name:'Sunday invitation',enabled:config.serviceEnabled,time:config.saturdayTime,frequency:'Every Saturday'},{id:'christmas',name:countdownSeason(data.today).title,enabled:config.christmasEnabled,time:config.christmasTime,frequency:'During your countdown'}],
   posts,activity,
   requirements:[...(!config.autoPublish?[{code:'publishing',title:'Automatic publishing is paused',detail:'Enable church publishing in your planner when you are ready.',view:'church',tab:'planner'}]:[]),...(!pageReady?[{code:'facebook',title:'Check your Facebook Page',detail:'Connect and select the intended church Page before delivery.',view:'connections'}]:[]),...(config.manualQueue?[{code:'preparation',title:'Automatic queue filling is paused',detail:'Resume it to prepare the next seven days without opening the website.',view:'church',tab:'posts'}]:[]),...(usesCanva&&(!canvaAccount||canvaAccount.refresh_claim||!canva.enabled)?[{code:'canva',title:'Canva images need setup',detail:'Connect Canva and enable image generation, or attach finished PNGs. Saved template links alone cannot post.',view:'church',tab:'templates'}]:[])]};
 }

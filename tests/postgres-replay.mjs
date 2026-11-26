@@ -5,7 +5,7 @@ import {translateSql} from '../backend/postgres-d1.mjs';
 const pg=new PGlite();
 await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
 for(const f of (await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')).sort())await pg.exec(await readFile('supabase/migrations/'+f,'utf8'));
-const transcript=JSON.parse(await readFile('.sites-runtime/sql-transcript.json','utf8'));
+const transcript=JSON.parse(await readFile(process.env.EKKLO_SQL_TRANSCRIPT||'.sites-runtime/sql-transcript.json','utf8'));
 const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
 const encodedJson=new Map();
 function normalize(value){

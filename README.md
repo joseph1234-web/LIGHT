@@ -18,7 +18,7 @@ A church publishing workspace for Bible verses, Sunday invitations, Christmas co
 | Background queue and cloud check receipts | `lib/church/automation-worker.ts` |
 | Scheduling and Facebook delivery | `lib/church/server.ts` |
 
-Open a file in GitHub and use Edit, or clone the repository in your editor. A GitHub commit saves source; making it live also requires a deployment to the current server host. The repository is not automatically linked to production deployment. See [DEPLOYMENT.md](DEPLOYMENT.md).
+Open a file in GitHub and use Edit, or clone the repository in your editor. Pushing to `main` publishes the frontend to [GitHub Pages](https://joseph1234-web.github.io/LIGHT/) after the Pages checks pass. The Supabase backend is deployed separately. See [MIGRATION.md](MIGRATION.md).
 
 ## Appearance
 
@@ -88,3 +88,11 @@ Connections provides direct links to facebook.com, instagram.com and youtube.com
 The Autopilot screen independently enables pictures and videos, with up to four whole-hour slots and connected destinations. Enabling one type from a paused state does not enable the other. Only already approved drafts are selected, once per type per daily slot. Pictures publish to Facebook/Instagram; YouTube is video only. Instagram still needs a separately hosted public HTTPS copy of the exact approved media. Church image automation stays in its own planner; its three buttons save immediately and require the authorized Facebook Page. Saturday invitations always target the following Sunday.
 
 Disconnecting or switching destinations pauses affected deliveries and media automation. Facebook changes also pause church publishing. Uploads whose outcome is uncertain remain in review, including across planner changes. Every new delivery records its intended social account; older jobs without that target must be reviewed. Expired posts are skipped after 75 minutes, with no backfill.
+
+## Seasonal countdown and images
+
+Christmas runs through December 25. On December 26, the same saved posting time and switch apply to New Year, through January 1, in the church’s saved timezone. The page updates its season while open.
+
+In **Church planner → Image sources → Countdown images**, choose the post date, use **Upload image** or **Change image**, preview it, then **Save image**. PNG and JPG files up to 10 MB are accepted and stored privately per account. An image replaces only eligible, unposted schedules for its exact date; published and started deliveries retain their snapshots. Existing Christmas pack images remain available for dates without a custom upload. New Year uses its own images or the built-in New Year design.
+
+`node tests/countdown-integration.mjs` covers seasonal boundaries, uploads, replacements, account isolation, and published history. `npm run check:postgres` also replays those database operations against Postgres.

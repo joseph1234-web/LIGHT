@@ -17,7 +17,7 @@ export function validateChurchPng(bytes:Uint8Array){
  if(!header||!data||!ended)throw new HttpError(400,'The PNG file is incomplete. Export it again from Canva.');
  return bytes;
 }
-async function formWithLimit(request:Request){
+export async function formWithLimit(request:Request){
  if(Number(request.headers.get('content-length')||0)>maxSize+128*1024)throw new HttpError(413,'Export one PNG page up to 10 MB.');
  const reader=request.body?.getReader();if(!reader)throw new HttpError(400,'Choose the exported PNG.');const chunks:Uint8Array[]=[];let size=0;
  while(true){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>maxSize+128*1024){await reader.cancel();throw new HttpError(413,'Export one PNG page up to 10 MB.');}chunks.push(part.value);}

@@ -4,7 +4,7 @@ import {CalendarDays,Loader2,X} from 'lucide-react';
 import {dateInZone,addDays,suggestedPostingTime,type ChurchConfig,type ChurchSpec} from '../../lib/church/model';
 import {readStudioJson} from '../../lib/client-api';
 
-const seriesNames={daily:'Daily Bible verse',service:'Saturday Sunday invitation',christmas:'Christmas countdown',event:'Special-event countdown'};
+const seriesNames={daily:'Daily Bible verse',service:'Saturday Sunday invitation',christmas:'Seasonal countdown',event:'Special-event countdown'};
 function localTime(date:Date,timezone:string){return new Intl.DateTimeFormat('en-GB',{timeZone:timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(date);}
 export default function ChurchCustomSchedule({config,post,posts=[],initialChoice={},onClose,onSaved}:{config:ChurchConfig;post?:any;posts?:any[];initialChoice?:any;onClose:()=>void;onSaved:(result?:any)=>Promise<void>}){
  const initial=new Date(post?.scheduled||Date.now()+3600000),initialDate=post?.date||initialChoice.date||dateInZone(initial,config.timezone),[series,setSeries]=useState<ChurchSpec['kind']>(post?.series||initialChoice.series||'daily'),[date,setDate]=useState(initialDate),[time,setTime]=useState(suggestedPostingTime(initialDate,initialChoice.time||localTime(initial,config.timezone),config.timezone)),[eventId,setEventId]=useState(post?.eventId||config.events.find(e=>e.enabled)?.id||''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[replaceRemoved,setReplaceRemoved]=useState(false);

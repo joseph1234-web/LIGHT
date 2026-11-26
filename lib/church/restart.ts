@@ -1,3 +1,4 @@
+import {applyCountdownImage} from './countdown-images';
 import {db,E,one,rows,run,now,uid,HttpError,setup} from '../server';
 import {churchConfig} from './server';
 import {churchHasSocialAttempt} from './scheduling';
@@ -39,7 +40,8 @@ export async function restartChurchSchedule(owner:string,input:any,clock=new Dat
     let time=date===today&&currentChoice?JSON.parse(currentChoice.payload).customSchedule.time:suggestedPostingTime(date,savedTime,config.timezone,clock);
     const scheduled=zonedTime(date,time,config.timezone);if(Date.parse(scheduled)<=clock.getTime()){skipped.push({series:kind,date,reason:'No future posting time remains on this date.'});continue;}
     content.scheduled=scheduled;if(time!==savedTime)content.customSchedule={time};
-    if(config.canvaSources[kind])content.canva={sourceUrl:config.canvaSources[kind],renderId:uid(),state:'pending'};
+    await applyCountdownImage(owner,content);
+    if(config.canvaSources[kind]&&!content.countdownImage&&content.spec.occasion!=='newyear')content.canva={sourceUrl:config.canvaSources[kind],renderId:uid(),state:'pending'};
     (content as any).scheduleReset={requestId:input.requestId,started:today};
     const status=content.christmasImage&&!content.christmasImage.available?'needs_review':!config.autoPublish?'draft':!page||!facebookReady?'waiting_connection':page.account_id!==config.autoPageId?'needs_review':'scheduled';
     const message=content.christmasImage&&!content.christmasImage.available?content.christmasImage.reason:status==='draft'?'Automatic church publishing is off.':status==='waiting_connection'?'Waiting for the saved Facebook Page.':status==='needs_review'?'The connected Facebook Page does not match the saved destination.':'New scheduling cycle. Canva pages restart at 1.';

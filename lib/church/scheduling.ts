@@ -8,7 +8,7 @@ export function churchHasSocialAttempt(row:any){
  if(row.claimed!=null||row.remote_id!=null||['uploading','processing','published'].includes(row.status))return true;
  let content:any;try{content=JSON.parse(row.payload)}catch{return true;}
  if(content._photoId||['uploading','processing','published'].includes(content.cancelledFrom)||['uploading','processing','published'].includes(content.queueRemoval?.previousStatus))return true;
- return !content.canva&&!content.christmasImage&&(row.status==='needs_review'||content.queueRemoval?.previousStatus==='needs_review');
+ return !content.canva&&!content.christmasImage&&!content.countdownImage&&(row.status==='needs_review'||content.queueRemoval?.previousStatus==='needs_review');
 }
 
 /** A cancelled draft can return only through an explicit scheduling action. */

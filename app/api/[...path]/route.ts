@@ -4,6 +4,7 @@ import {restartChurchSchedule} from '../../../lib/church/restart';
 import { body, csrf, user, json, HttpError, db, E, rows, one, run, uid, now, settings, saveSettings, studioState, saveDraft, getDraft, queueDraft, publicAppConfiguration, saveProviderApp, oauthStart, oauthCallback, choosePage, chooseYoutube, disconnectConnection, connectionReturn, publicSettings, log } from '../../../lib/server';
 import {uploadMedia} from '../../../lib/media';
 import {uploadChurchImage} from '../../../lib/church/uploads';
+import {countdownImages,countdownImageBytes,uploadCountdownImage} from '../../../lib/church/countdown-images';
 import { discover } from '../../../lib/discovery';
 import {saveUploadedTemplate,getTemplatePreview} from '../../../lib/church/templates';
 import { runQueue } from '../../../lib/publisher';
@@ -50,6 +51,9 @@ async function handle(request:Request){try{
  if(path==='canva/callback'&&method==='GET'){const target=new URL(appEndpoint(request,'?view=church&churchTab=templates'));try{await canvaCallback(owner,request);target.searchParams.set('canvaNotice','connected');}catch(e){target.searchParams.set('canvaNotice',e instanceof HttpError?e.message:'Canva sign-in could not finish. Check Connection details before starting a new connection.');}return navigationRedirect(target.toString());}
  if(path==='church/template'&&method==='POST'){await churchConfig(owner);return json(await saveUploadedTemplate(owner,request));}
  if(path.startsWith('church/template/')&&method==='GET'){await churchConfig(owner);return new Response(await getTemplatePreview(owner,path.split('/')[2]),{headers:{'Content-Type':'image/png','Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}});}
+ if(path==='church/countdown-images'&&method==='GET')return json(await countdownImages(owner,Number(url.searchParams.get('year')||new Date().getFullYear())));
+ if(path==='church/countdown-images'&&method==='POST')return json(await uploadCountdownImage(owner,request,await churchConfig(owner)));
+ if(path.startsWith('church/countdown-image/')&&method==='GET')return new Response(await countdownImageBytes(owner,path.split('/')[2]),{headers:{'Content-Type':'image/png','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  if(path==='church/use-christmas-pack'&&method==='POST')return json(await adoptChristmasPack(owner));
  if(path==='church/state'&&method==='GET')return json({...await churchState(owner),signedInEmail:request.headers.get('oai-authenticated-user-email')||''});
  if(path==='church/dashboard'&&method==='GET')return json(await churchDashboard(owner));
