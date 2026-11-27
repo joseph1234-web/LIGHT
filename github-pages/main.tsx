@@ -5,7 +5,7 @@ import EntryFrame from '../app/components/entry-frame';
 import ThemeProvider from '../app/components/theme-provider';
 import {AccountSession,type Session} from './session';
 import {fetchPresenterInstaller} from './presenter-download';
-import {presenterPlatform,presenterReleases,type PresenterPlatform} from '../lib/presenter-releases';
+import {presenterPlatform,presenterProEmail,presenterReleases,type PresenterPlatform} from '../lib/presenter-releases';
 import type {StandaloneConfig} from '../lib/public-paths';
 import '../app/globals.css';import '../app/ekklo.css';import '../app/theme.css';import '../app/entry.css';import './signin.css';
 const response=await fetch(new URL('./ekklo-config.json',import.meta.url),{cache:'no-store'});
@@ -47,6 +47,8 @@ function DownloadReady({platform}:{platform:PresenterPlatform}){
  const [progress,setProgress]=useState<number|null>(null);
  const [download,setDownload]=useState('');
  const [error,setError]=useState('');
+ const [license,setLicense]=useState('');
+ const requiresPro=platform==='android';
  const active=useRef<AbortController|null>(null);
 
  useEffect(()=>()=>active.current?.abort(),[]);
@@ -61,8 +63,9 @@ function DownloadReady({platform}:{platform:PresenterPlatform}){
   setProgress(0);
   try{
    const session=await account.current();
-   const blob=await fetchPresenterInstaller(config,platform,session?.access_token||'',setProgress,controller.signal);
+   const blob=await fetchPresenterInstaller(config,platform,session?.access_token||'',setProgress,controller.signal,license);
    if(controller.signal.aborted)return;
+   setLicense('');
    const href=URL.createObjectURL(blob);
    setDownload(href);
    const link=document.createElement('a');
@@ -83,6 +86,7 @@ function DownloadReady({platform}:{platform:PresenterPlatform}){
   <EntryFrame assetBase={base}>
    <h1 id="entry-title">{release.platform} download</h1>
    <p className="entry-description">Ekklo. Worship Presenter {release.version} · {release.format} · {Math.round(release.bytes/1_000_000)} MB</p>
+   {requiresPro&&<p className="entry-description">Enter your Pro license key to download the Android APK.</p>}
    <div className="entry-ready">
     {error&&<p className="entry-feedback error" role="alert">{error}</p>}
     {download?(
@@ -91,13 +95,23 @@ function DownloadReady({platform}:{platform:PresenterPlatform}){
       <a className="entry-primary" href={download} download={release.fileName}>Save {release.platform} file</a>
      </>
     ):(
-     <button className="entry-primary" type="button" disabled={progress!==null} onClick={startDownload}>
-      {progress===null?'Download for '+release.platform:'Preparing download… '+progress+'%'}
-     </button>
+     <form className="entry-form" onSubmit={event=>{event.preventDefault();void startDownload();}}>
+      {requiresPro&&<div className="entry-control">
+       <label htmlFor="presenter-license">Pro license key</label>
+       <input id="presenter-license" type="password" autoComplete="off" spellCheck={false}
+        autoCapitalize="characters" maxLength={80} placeholder="LHP-…" required
+        value={license} onChange={event=>setLicense(event.target.value)} disabled={progress!==null}/>
+      </div>}
+      <button className="entry-primary" type="submit" disabled={progress!==null}>
+       {progress===null?(requiresPro?'Verify license and download':'Download for Windows')
+        :requiresPro&&progress===0?'Checking license…':'Preparing download… '+progress+'%'}
+      </button>
+     </form>
     )}
     {progress!==null&&<progress aria-label="Download progress" value={progress} max={100} />}
    </div>
    <div className="entry-actions">
+    {requiresPro&&<a className="entry-text-action" href={presenterProEmail}>Email to purchase Pro</a>}
     <a className="entry-text-action entry-back" href={base}>Back to welcome</a>
     <a className="entry-text-action entry-back" href={base+'?download='+platform+'&logout=1'}>Use another account</a>
    </div>
@@ -189,7 +203,9 @@ function Application(){
  const release=platform?presenterReleases[platform]:null;
  const title=mode==='signin'&&release?'Sign in to download':copy.title;
  const description=release&&(mode==='signin'||mode==='signup')
-  ?mode==='signin'
+  ?platform==='android'
+   ?'Sign in or create an account, then enter your Ekklo. Pro license key to get the Android APK.'
+   :mode==='signin'
    ?'Use your Gmail or email address and Ekklo password to download Worship Presenter for '+release.platform+'.'
    :'Use your email address and create an Ekklo password to get Worship Presenter for '+release.platform+'.'
   :copy.description;

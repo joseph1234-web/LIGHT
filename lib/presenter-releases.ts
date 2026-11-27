@@ -1,4 +1,5 @@
 export const presenterHome = 'https://joseph1234-web.github.io/LIGHT/';
+export const presenterProEmail = 'mailto:sepher1800@gmail.com?subject=Ekklo.%20Pro%20purchase%20request';
 
 export const presenterReleases = {
   windows: {
@@ -11,11 +12,11 @@ export const presenterReleases = {
   },
   android: {
     platform: 'Android',
-    version: '1.15.0',
-    fileName: 'Ekklo_Android_1.15.0.apk',
+    version: '1.17.0',
+    fileName: 'Ekklo_Android_1.17.0.apk',
     format: 'APK',
     contentType: 'application/vnd.android.package-archive',
-    bytes: 149_759_316,
+    bytes: 149_698_468,
   },
 } as const;
 
