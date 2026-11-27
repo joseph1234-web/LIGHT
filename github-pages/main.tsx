@@ -2,12 +2,13 @@ import {useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import Studio from '../app/page';
 import EntryFrame from '../app/components/entry-frame';
+import EkkloWelcome from '../app/components/ekklo-welcome';
 import ThemeProvider from '../app/components/theme-provider';
 import {AccountSession,type Session} from './session';
 import {fetchPresenterInstaller} from './presenter-download';
 import {presenterPlatform,presenterProEmail,presenterReleases,type PresenterPlatform} from '../lib/presenter-releases';
 import type {StandaloneConfig} from '../lib/public-paths';
-import '../app/globals.css';import '../app/ekklo.css';import '../app/theme.css';import '../app/entry.css';import './signin.css';
+import '../app/globals.css';import '../app/ekklo.css';import '../app/theme.css';import '../app/entry.css';import '../app/welcome.css';import './signin.css';
 const response=await fetch(new URL('./ekklo-config.json',import.meta.url),{cache:'no-store'});
 if(!response.ok)throw new Error('ekklo. configuration could not be loaded.');
 const config:StandaloneConfig=await response.json();globalThis.__EKKLO_STANDALONE__=config;
@@ -120,7 +121,8 @@ function DownloadReady({platform}:{platform:PresenterPlatform}){
 }
 
 function Application(){
- const [session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[mode,setMode]=useState<AccessMode>('signin');
+ const [session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [mode,setMode]=useState<AccessMode>(()=>hasWorkspaceRequest()&&new URLSearchParams(location.search).get('mode')==='signup'?'signup':'signin');
  const [passwordVisible,setPasswordVisible]=useState(false);
  const params=new URLSearchParams(location.search);
  const platform=presenterPlatform(params.get('download'));
@@ -182,11 +184,7 @@ function Application(){
   }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
  if(!platform&&!workspaceRequested&&mode!=='password')return (
-  <EntryFrame assetBase={base} welcome presenterHome={config.appUrl}>
-   <h2 id="workspace-title">Church workspace</h2>
-   <p className="entry-description">Plan Bible verse posts, Sunday invitations, and church announcements.</p>
-   <a className="entry-primary" href={workspaceHref}>Open church workspace</a>
-  </EntryFrame>
+  <EkkloWelcome accountHome={config.appUrl} assetBase={base} workspaceHref={session?workspaceHref:undefined} signedIn={Boolean(session)} />
  );
  if(loading)return (
   <EntryFrame assetBase={base}>

@@ -1,5 +1,6 @@
 export const presenterHome = 'https://joseph1234-web.github.io/LIGHT/';
-export const presenterProEmail = 'mailto:sepher1800@gmail.com?subject=Ekklo.%20Pro%20purchase%20request';
+export const presenterContactEmail = 'sepher1800@gmail.com';
+export const presenterProEmail = `mailto:${presenterContactEmail}?subject=Ekklo.%20Pro%20purchase%20request`;
 
 export const presenterReleases = {
   windows: {
