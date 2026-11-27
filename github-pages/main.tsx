@@ -1,10 +1,11 @@
 import {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import Studio from '../app/page';
+import EntryFrame from '../app/components/entry-frame';
 import ThemeProvider from '../app/components/theme-provider';
 import {AccountSession,type Session} from './session';
 import type {StandaloneConfig} from '../lib/public-paths';
-import '../app/globals.css';import '../app/ekklo.css';import '../app/theme.css';import './signin.css';
+import '../app/globals.css';import '../app/ekklo.css';import '../app/theme.css';import '../app/entry.css';import './signin.css';
 const response=await fetch(new URL('./ekklo-config.json',import.meta.url),{cache:'no-store'});
 if(!response.ok)throw new Error('ekklo. configuration could not be loaded.');
 const config:StandaloneConfig=await response.json();globalThis.__EKKLO_STANDALONE__=config;
@@ -15,9 +16,18 @@ async function transport(session:Session|null){
  const worker=navigator.serviceWorker.controller||registration.active;if(!worker)throw new Error('Refresh to finish opening ekklo..');
  await new Promise<void>((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>reject(new Error('Refresh to renew your secure connection.')),8000);channel.port1.onmessage=()=>{clearTimeout(timer);channel.port1.close();resolve();};worker.postMessage({type:'EKKLO_ACCESS',access:session?{token:session.access_token,expiresAt:session.expires_at}:null},[channel.port2]);});
 }
-function Shell({children}:{children:React.ReactNode}){return <div className="ekklo-signin"><div className="ekklo-signin-card"><div className="signin-brand"><img src={base+'ekklo-mark.png'} alt=""/><span>ekklo<span>.</span></span></div>{children}</div></div>;}
+const accessCopy = {
+  signin: { title: 'Sign in to ekklo.', description: 'Open your church publishing workspace.', action: 'Sign in' },
+  signup: { title: 'Create your account', description: 'Set up your church publishing workspace.', action: 'Create account' },
+  recover: { title: 'Reset your password', description: 'Enter your account email to request a reset link.', action: 'Send reset email' },
+  password: { title: 'Choose a new password', description: 'Use at least 8 characters.', action: 'Save password' },
+} as const;
+type AccessMode = keyof typeof accessCopy;
+
 function Application(){
- const [session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[mode,setMode]=useState<'signin'|'signup'|'recover'|'password'>('signin');
+ const [session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[mode,setMode]=useState<AccessMode>('signin');
+ const [passwordVisible,setPasswordVisible]=useState(false);
+ function changeMode(next:AccessMode){setMode(next);setPasswordVisible(false);setError('');setNotice('');}
  async function restore(){try{const next=await account.current();await transport(next);setSession(next);setError('');return true;}catch(e){setSession(account.read());setError((e as Error).message);return false;}finally{setLoading(false);}}
  useEffect(()=>{
  const renew=(event:MessageEvent)=>{
@@ -45,15 +55,57 @@ function Application(){
   if(url.pathname==='/'&&(url.search||url.hash)){event.preventDefault();location.assign(base+url.search+url.hash);return;}
   if(url.pathname.startsWith('/api/'))anchor.href=base+url.pathname.slice(1)+url.search+url.hash;
  };document.addEventListener('click',click,true);return()=>document.removeEventListener('click',click,true);},[]);
- async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(busy)return;const data=new FormData(event.currentTarget),email=String(data.get('email')||'').trim(),password=String(data.get('password')||'');setBusy(true);setError('');setNotice('');
+ async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(busy)return;const data=new FormData(event.currentTarget),email=String(data.get('email')||'').trim(),password=String(data.get('password')||'');setBusy(true);setPasswordVisible(false);setError('');setNotice('');
   try{if(mode==='recover'){await account.recover(email);setNotice('If an account exists, a password reset email is on its way.');return;}
    if(mode==='password'){await account.changePassword(password);setMode('signin');setNotice('Your password has been updated.');}
    else{const next=mode==='signup'?await account.signUp(email,password):await account.signIn(email,password);if(!next){setNotice('Check your email to confirm your account, then sign in.');return;}}
    await restore();
   }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
- if(loading)return <Shell><h1>Loading…</h1></Shell>;
+ if(loading)return (
+  <EntryFrame assetBase={base}>
+   <h1 id="entry-title">Opening your workspace</h1>
+   <p className="entry-description" role="status">Checking your account session…</p>
+  </EntryFrame>
+ );
  if(session&&mode!=='password')return <>{error&&<div className="standalone-error" role="alert">{error}<button onClick={()=>setError('')} aria-label="Dismiss">×</button></div>}<Studio/></>;
- return <Shell><h1>{mode==='signup'?'Create account':mode==='recover'?'Reset your password':mode==='password'?'Choose a new password':'Sign in'}</h1><form onSubmit={submit}>{mode!=='password'&&<label>Email<input name="email" type="email" autoComplete="email" required/></label>}{mode!=='recover'&&<label>Password<input name="password" type="password" minLength={mode==='signin'?1:8} autoComplete={mode==='signin'?'current-password':'new-password'} required/></label>}{error&&<p className="signin-error" role="alert">{error}</p>}{notice&&<p className="signin-notice" role="status">{notice}</p>}<button className="btn primary full" disabled={busy}>{busy?'Please wait…':mode==='signup'?'Create account':mode==='recover'?'Send reset email':mode==='password'?'Save password':'Sign in'}</button></form><div className="signin-actions">{mode==='signin'?<><button onClick={()=>{setMode('signup');setError('');setNotice('');}}>Create an account</button><button onClick={()=>{setMode('recover');setError('');setNotice('');}}>Forgot password?</button></>:<button onClick={()=>{setMode('signin');setError('');setNotice('');}}>Back to sign in</button>}</div></Shell>;
+
+ const copy=accessCopy[mode];
+ return (
+  <EntryFrame assetBase={base}>
+   <h1 id="entry-title">{copy.title}</h1>
+   <p className="entry-description">{copy.description}</p>
+   <form className="entry-form" aria-busy={busy} onSubmit={submit}>
+    {mode!=='password'&&(
+     <div className="entry-control">
+      <label htmlFor="entry-email">Email address</label>
+      <input id="entry-email" name="email" type="email" autoComplete={mode==='signin'?'username':'email'} placeholder="you@example.com" required />
+     </div>
+    )}
+    {mode!=='recover'&&(
+     <div className="entry-control" key={mode}>
+      <label htmlFor="entry-password">{mode==='password'?'New password':'Password'}</label>
+      <div className="entry-password">
+       <input id="entry-password" name="password" type={passwordVisible?'text':'password'} minLength={mode==='signin'?1:8} autoComplete={mode==='signin'?'current-password':'new-password'} required />
+       <button className="entry-reveal" type="button" aria-label={passwordVisible?'Hide password':'Show password'} aria-pressed={passwordVisible} disabled={busy} onClick={()=>setPasswordVisible(visible=>!visible)}>{passwordVisible?'Hide':'Show'}</button>
+      </div>
+     </div>
+    )}
+    {error&&<p className="entry-feedback error" role="alert">{error}</p>}
+    {notice&&<p className="entry-feedback notice" role="status">{notice}</p>}
+    <button className="entry-primary" type="submit" disabled={busy}>{busy?'Please wait…':copy.action}</button>
+   </form>
+   <div className="entry-actions">
+    {mode==='signin'?(
+     <>
+      <button className="entry-text-action" type="button" disabled={busy} onClick={()=>changeMode('signup')}>Create an account</button>
+      <button className="entry-text-action" type="button" disabled={busy} onClick={()=>changeMode('recover')}>Forgot password?</button>
+     </>
+    ):(
+     <button className="entry-text-action" type="button" disabled={busy} onClick={()=>changeMode('signin')}>Back to sign in</button>
+    )}
+   </div>
+  </EntryFrame>
+ );
 }
 createRoot(document.getElementById('root')!).render(<ThemeProvider><Application/></ThemeProvider>);
