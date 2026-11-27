@@ -1,96 +1,128 @@
-import { BookOpen, CalendarDays, Church, Image, Link2, ListVideo, Mail, Monitor, Send, Smartphone } from 'lucide-react';
+'use client';
+
+import { CalendarDays, Image, ListVideo, Mail, Monitor, Pause, Play, Send, Smartphone } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { presenterContactEmail, presenterHome } from '../../lib/presenter-releases';
 import PresenterDownloads from './presenter-downloads';
+import { StagePreview, WorkspacePreview } from './welcome-previews';
+
+const sections = [
+  { id: 'features', label: 'Church tools' },
+  { id: 'presenter', label: 'Worship Presenter' },
+  { id: 'developer', label: 'Developer' },
+];
 
 const features = [
-  {
-    icon: CalendarDays,
-    title: 'Plan your church posts',
-    description: 'Manage recurring posts and one-time events in the same calendar. See what’s scheduled and which posts still need artwork.',
-  },
-  {
-    icon: Image,
-    title: 'Create artwork with Canva',
-    description: 'Use saved Canva templates for verses and invitations, and upload your own artwork for countdowns and events.',
-  },
-  {
-    icon: Send,
-    title: 'Publish to your Facebook Page',
-    description: 'Connect your church’s Facebook Page and enable automatic publishing for the posts you’ve scheduled.',
-  },
+  { icon: CalendarDays, title: 'Plan your church posts',
+    description: 'Schedule a Bible verse for each morning, an invitation for Saturday, or a one-time church event. See them together on your calendar.' },
+  { icon: Image, title: 'Design with Canva',
+    description: 'Prepare verse and invitation posts with your saved Canva templates. Use your church’s own artwork for countdowns and special events.' },
+  { icon: Send, title: 'Publish to Facebook',
+    description: 'Choose your church’s Facebook Page and turn on scheduled publishing. Ready posts go out in their posting window.' },
 ];
 
-const examplePosts = [
-  { icon: BookOpen, title: 'Morning Bible verse', time: 'Monday · 7:00 AM', status: 'Scheduled' },
-  { icon: Church, title: 'Sunday service invitation', time: 'Saturday · 9:00 AM', status: 'Ready' },
-  { icon: Image, title: 'Church anniversary countdown', time: 'Next week', status: 'Draft' },
-];
-
-function WorkspacePreview() {
-  return (
-    <figure className="welcome-preview">
-      <figcaption className="welcome-preview-bar">
-        <span><CalendarDays size={17} aria-hidden="true" /> Church planner</span>
-        <small>Workspace preview</small>
-      </figcaption>
-      <div className="welcome-preview-body">
-        <div className="welcome-preview-sidebar" aria-hidden="true">
-          <span><CalendarDays size={16} /> Calendar</span>
-          <span><Church size={16} /> Church posts</span>
-          <span><Image size={16} /> Templates</span>
-          <span><Link2 size={16} /> Connections</span>
-        </div>
-        <div className="welcome-preview-agenda">
-          <h2>Upcoming posts</h2>
-          <ul>
-            {examplePosts.map(({ icon: Icon, title, time, status }) => (
-              <li key={title}>
-                <span className="welcome-preview-icon"><Icon size={18} aria-hidden="true" /></span>
-                <div><strong>{title}</strong><small>{time}</small></div>
-                <span className="welcome-preview-state" data-status={status}>{status}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="welcome-preview-verse">
-          <span>Morning encouragement</span>
-          <p>The Lord is my shepherd.</p>
-          <small>Psalm 23:1</small>
-        </div>
-      </div>
-    </figure>
-  );
-}
+const motionKey = 'ekklo:welcome:pause-motion';
 
 export default function EkkloWelcome({
-  accountHome = presenterHome,
-  assetBase = '/',
-  workspaceHref,
-  signedIn = false,
+  accountHome = presenterHome, assetBase = '/', workspaceHref, signedIn = false,
 }: {
-  accountHome?: string;
-  assetBase?: string;
-  workspaceHref?: string;
-  signedIn?: boolean;
+  accountHome?: string; assetBase?: string; workspaceHref?: string; signedIn?: boolean;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  const header = useRef<HTMLElement>(null);
+  const [systemReduced, setSystemReduced] = useState<boolean | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [currentSection, setCurrentSection] = useState('');
+  const motion = systemReduced === false && !paused;
+  const motionLabel = systemReduced ? 'Reduced motion is on' : motion ? 'Pause animations' : 'Play animations';
   const loginHref = new URL('?workspace=1', accountHome).href;
   const signupHref = new URL('?workspace=1&mode=signup', accountHome).href;
 
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setSystemReduced(preference.matches);
+    sync();
+    try { setPaused(localStorage.getItem(motionKey) === 'yes'); } catch { /* Storage is optional. */ }
+    preference.addEventListener('change', sync);
+    return () => preference.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const page = root.current;
+    const nav = header.current;
+    if (!page || !nav) return;
+    const targets = sections.map(section => document.getElementById(section.id));
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const end = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      const progress = Math.min(1, Math.max(0, window.scrollY / end));
+      nav.style.setProperty('--welcome-progress', String(progress));
+      const marker = nav.getBoundingClientRect().bottom + window.innerHeight * .24;
+      let section = '';
+      for (const target of targets) {
+        if (target && target.getBoundingClientRect().top <= marker) section = target.id;
+      }
+      setCurrentSection(progress >= .998 ? 'developer' : section);
+    };
+    function scheduleMeasure() {
+      if (!frame) frame = requestAnimationFrame(measure);
+    }
+    // The public welcome page mounts after account configuration has loaded.
+    const hashTarget = document.getElementById(window.location.hash.slice(1));
+    if (hashTarget && page.contains(hashTarget)) hashTarget.scrollIntoView({ behavior: 'instant' });
+    measure();
+    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleMeasure);
+    resize?.observe(page);
+    window.addEventListener('scroll', scheduleMeasure, { passive: true });
+    window.addEventListener('resize', scheduleMeasure);
+    const reveal = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('welcome-arrived');
+          reveal?.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .1 });
+    page.querySelectorAll('[data-reveal]').forEach(element => reveal?.observe(element));
+    return () => {
+      window.removeEventListener('scroll', scheduleMeasure);
+      window.removeEventListener('resize', scheduleMeasure);
+      cancelAnimationFrame(frame);
+      resize?.disconnect();
+      reveal?.disconnect();
+    };
+  }, []);
+
+  function toggleMotion() {
+    const next = !paused;
+    setPaused(next);
+    try {
+      if (next) localStorage.setItem(motionKey, 'yes');
+      else localStorage.removeItem(motionKey);
+    } catch { /* The setting still applies for this visit. */ }
+  }
+
   return (
-    <div className="welcome-page" id="top">
+    <div className="welcome-page" id="top" ref={root} data-motion={motion ? 'on' : 'off'}>
       <a className="welcome-skip" href="#welcome-main">Skip to content</a>
-      <header className="welcome-header">
+      <header className="welcome-header" ref={header}>
         <div className="welcome-container welcome-header-inner">
           <a className="welcome-brand" href="#top" aria-label="Ekklo. home">
-            <img src={assetBase + 'ekklo-mark.png'} width={32} height={32} alt="" />
+            <img src={assetBase + 'ekklo-mark.png'} width={34} height={34} alt="" />
             <span>ekklo<span>.</span></span>
           </a>
           <nav className="welcome-nav" aria-label="Welcome page">
-            <a href="#features">Church tools</a>
-            <a href="#presenter">Worship Presenter</a>
-            <a href="#developer">Developer</a>
+            {sections.map(({ id, label }) => (
+              <a key={id} href={'#' + id} aria-current={currentSection === id ? 'location' : undefined}>{label}</a>
+            ))}
           </nav>
           <div className="welcome-account">
+            <button type="button" className="welcome-motion" disabled={systemReduced !== false}
+              aria-label={motionLabel} title={motionLabel} onClick={toggleMotion}>
+              {motion ? <Pause size={16} fill="currentColor" aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+              <span>{systemReduced ? 'Motion off' : motion ? 'Pause' : 'Play'}</span>
+            </button>
             {signedIn ? (
               <a className="welcome-button welcome-primary" href={workspaceHref ?? loginHref}>Open workspace</a>
             ) : (
@@ -105,54 +137,51 @@ export default function EkkloWelcome({
 
       <main id="welcome-main" tabIndex={-1}>
         <section className="welcome-hero" id="church-workspace" aria-labelledby="welcome-title">
-          <div className="welcome-container">
+          <div className="welcome-hero-art" aria-hidden="true"><i /><i /></div>
+          <div className="welcome-container welcome-hero-grid">
             <div className="welcome-intro">
-              <h1 id="welcome-title">Your church’s <span>social media planner.</span></h1>
-              <p>Prepare and schedule Bible verse posts, Sunday invitations, and church announcements for your Facebook Page.</p>
-              <div className="welcome-hero-actions">
+              <h1 id="welcome-title">Your church’s <span>social media</span> <em>planner.</em></h1>
+              <p>Prepare Bible verses, Sunday invitations, and announcements for your church’s Facebook Page. Plan the week in one place.</p>
+              <div className="welcome-actions">
                 <a className="welcome-button welcome-primary" href={workspaceHref ?? signupHref}>
                   {workspaceHref ? 'Open church workspace' : 'Get started'}
                 </a>
                 <a className="welcome-button welcome-secondary" href="#features">Explore church tools</a>
               </div>
             </div>
-            <WorkspacePreview />
+            <WorkspacePreview assetBase={assetBase} motion={motion} interactive={systemReduced !== null} />
           </div>
         </section>
 
-        <section className="welcome-container welcome-section" id="features" aria-labelledby="welcome-features-title">
-          <h2 className="welcome-features-title" id="welcome-features-title">From your calendar to your church’s Page</h2>
-          <ul className="welcome-feature-grid">
+        <section className="welcome-container welcome-features" id="features" aria-labelledby="welcome-features-title">
+          <h2 className="welcome-section-title" id="welcome-features-title" data-reveal>From your calendar to your <em>church’s Page.</em></h2>
+          <ul className="welcome-feature-list">
             {features.map(({ icon: Icon, title, description }) => (
-              <li key={title}>
-                <span className="welcome-feature-icon"><Icon size={22} aria-hidden="true" /></span>
-                <h3>{title}</h3>
-                <p>{description}</p>
+              <li key={title} data-reveal>
+                <span className="welcome-feature-icon"><Icon size={23} aria-hidden="true" /></span>
+                <h3>{title}</h3><p>{description}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="welcome-container welcome-section welcome-presenter" id="presenter" aria-labelledby="welcome-presenter-title">
-          <div className="welcome-presenter-intro">
-            <div className="welcome-presenter-copy">
-              <h2 id="welcome-presenter-title">Ekklo. Worship Presenter</h2>
-              <p>Manage the service order and what the congregation sees from one Windows workspace.</p>
-              <ul>
-                <li><ListVideo size={18} aria-hidden="true" /> Organize service slides and song lyrics</li>
-                <li><Monitor size={18} aria-hidden="true" /> Present Bible verses on the church screen</li>
-                <li><Smartphone size={18} aria-hidden="true" /> Follow the stage or control the PC from Android</li>
-              </ul>
-            </div>
-            <figure className="welcome-stage-preview">
-              <figcaption><Monitor size={17} aria-hidden="true" /> Stage view preview</figcaption>
-              <div className="welcome-stage-screen">
-                <p>Be still, and know<br />that I am God.</p>
-                <small>Psalm 46:10</small>
+        <section className="welcome-presenter" id="presenter" aria-labelledby="welcome-presenter-title">
+          <div className="welcome-container">
+            <div className="welcome-presenter-intro">
+              <div className="welcome-presenter-copy" data-reveal>
+                <h2 className="welcome-section-title" id="welcome-presenter-title">Ekklo. Worship <em>Presenter</em></h2>
+                <p>Prepare the service on your Windows PC and choose what the congregation sees on screen.</p>
+                <ul>
+                  <li><ListVideo size={18} aria-hidden="true" /> Organize service slides and song lyrics</li>
+                  <li><Monitor size={18} aria-hidden="true" /> Present Bible verses on the church screen</li>
+                  <li><Smartphone size={18} aria-hidden="true" /> Follow the stage or control the PC from Android</li>
+                </ul>
+                <a className="welcome-download-link" href="#presenter-downloads">See Presenter downloads</a>
               </div>
-            </figure>
+              <StagePreview assetBase={assetBase} interactive={systemReduced !== null} />
+            </div>
+            <PresenterDownloads home={accountHome} />
           </div>
-          <PresenterDownloads home={accountHome} />
         </section>
       </main>
 
