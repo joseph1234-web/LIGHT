@@ -8,7 +8,6 @@ using (
     'Ekklo_Setup_1.16.0.exe.part-00.bin',
     'Ekklo_Setup_1.16.0.exe.part-01.bin'
   )
-  and (select storage.allow_only_operation('storage.object.get_authenticated'))
   and (select auth.uid()) is not null
   and (select auth.jwt() ->> 'email') <> ''
   and (select auth.jwt() ->> 'is_anonymous') is distinct from 'true'
